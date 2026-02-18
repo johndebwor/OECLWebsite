@@ -1,0 +1,52 @@
+@* Reusable card for displaying a service overview *@
+
+<MudCard Elevation="2" Class="h-100 card-hover" Style="border-radius: 12px; cursor: pointer;">
+    <MudCardContent Class="pa-5">
+        <MudAvatar Color="Color.Primary" Size="Size.Medium" Variant="Variant.Outlined" Class="mb-3">
+            <MudIcon Icon="@IconName" Size="Size.Small" />
+        </MudAvatar>
+        <MudText Typo="Typo.h6" Class="mb-1" Style="font-family: 'Rajdhani', sans-serif;">@Title</MudText>
+        @if (!string.IsNullOrEmpty(Category))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">@Category</MudText>
+        }
+    </MudCardContent>
+    @if (!string.IsNullOrEmpty(ImageUrl))
+    {
+        <MudCardMedia Image="@ImageUrl" Height="180" />
+    }
+    <MudCardContent Class="pa-5 pt-3">
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @Description
+        </MudText>
+    </MudCardContent>
+    <MudCardActions Class="pa-5 pt-0">
+        @if (!string.IsNullOrEmpty(DetailUrl))
+        {
+            <MudButton Href="@DetailUrl" Variant="Variant.Text" Color="Color.Primary"
+                       EndIcon="@Icons.Material.Filled.ArrowForward"
+                       Style="text-transform: none;">
+                Learn More
+            </MudButton>
+        }
+        @if (OnInquiry.HasDelegate)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Secondary"
+                       OnClick="OnInquiry"
+                       StartIcon="@Icons.Material.Filled.Email"
+                       Style="text-transform: none;">
+                Inquire
+            </MudButton>
+        }
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Category { get; set; }
+    [Parameter] public string IconName { get; set; } = Icons.Material.Filled.Engineering;
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public string? DetailUrl { get; set; }
+    [Parameter] public EventCallback OnInquiry { get; set; }
+}

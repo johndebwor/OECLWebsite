@@ -1,0 +1,22 @@
+<MudNavMenu Bordered="true" Color="Color.Secondary">
+    <MudNavLink Href="/admin/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+    <MudNavLink Href="/admin/services" Icon="@Icons.Material.Filled.Engineering">Services</MudNavLink>
+    <MudNavLink Href="/admin/projects" Icon="@Icons.Material.Filled.Business">Projects</MudNavLink>
+    <MudNavLink Href="/admin/content" Icon="@Icons.Material.Filled.Article">Content</MudNavLink>
+    <MudNavLink Href="/admin/announcements" Icon="@Icons.Material.Filled.Campaign">Announcements</MudNavLink>
+    <MudNavLink Href="/admin/approvals" Icon="@Icons.Material.Filled.CheckCircle">Approvals</MudNavLink>
+    <MudNavLink Href="/admin/inquiries" Icon="@Icons.Material.Filled.Email">Inquiries</MudNavLink>
+    <MudNavLink Href="/admin/site-photos" Icon="@Icons.Material.Filled.PhotoLibrary">Site Photos</MudNavLink>
+
+    <AuthorizeView Policy="RequireDepartmentHead">
+        <Authorized>
+            <MudNavLink Href="/admin/users" Icon="@Icons.Material.Filled.People">Users</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Policy="RequireManagement">
+        <Authorized>
+            <MudNavLink Href="/admin/analytics" Icon="@Icons.Material.Filled.Analytics">Analytics</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+</MudNavMenu>

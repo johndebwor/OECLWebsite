@@ -1,0 +1,171 @@
+@page "/admin/content"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Content Pages — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Content Pages</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Edit website content and static pages</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="CreatePage"
+               Style="text-transform: none;">
+        New Page
+    </MudButton>
+</div>
+
+<MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+    <MudTable Items="@_pages" Hover="true" Dense="true" Elevation="0"
+              Loading="@_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Page Key</MudTh>
+            <MudTh>Title</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Last Modified</MudTh>
+            <MudTh Style="width: 100px;">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Key">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.PageKey</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Title">@context.PageTitle</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(context.ApprovalStatus == ApprovalStatus.Approved ? Color.Success : Color.Warning)">
+                    @context.ApprovalStatus
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Modified">@context.UpdatedAt?.ToString("d") ?? "—"</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="@(() => EditPage(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@* Edit Dialog *@
+<MudDialog @bind-Visible="_dialogVisible" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingPage is null ? "New Page" : $"Edit: {_editingPage.PageTitle}")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_editModel.PageKey" Label="Page Key" Variant="Variant.Outlined"
+                              Disabled="@(_editingPage is not null)"
+                              HelperText="URL-friendly identifier (e.g. 'about', 'mission')" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_editModel.PageTitle" Label="Page Title" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_editModel.Content" Label="Content" Variant="Variant.Outlined"
+                              Lines="12" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_editModel.MetaDescription" Label="Meta Description"
+                              Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_editModel.MetaKeywords" Label="Meta Keywords"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _dialogVisible = false)">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePage">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ContentPage> _pages = [];
+    private bool _loading = true;
+    private bool _dialogVisible;
+    private ContentPage? _editingPage;
+    private ContentPageModel _editModel = new();
+
+    protected override async Task OnInitializedAsync() => await LoadPages();
+
+    private async Task LoadPages()
+    {
+        _loading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            _pages = await context.ContentPages
+                .OrderBy(p => p.PageKey)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally { _loading = false; }
+    }
+
+    private void CreatePage()
+    {
+        _editingPage = null;
+        _editModel = new();
+        _dialogVisible = true;
+    }
+
+    private void EditPage(ContentPage page)
+    {
+        _editingPage = page;
+        _editModel = new ContentPageModel
+        {
+            PageKey = page.PageKey,
+            PageTitle = page.PageTitle,
+            Content = page.Content,
+            MetaDescription = page.MetaDescription,
+            MetaKeywords = page.MetaKeywords,
+        };
+        _dialogVisible = true;
+    }
+
+    private async Task SavePage()
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        ContentPage entity;
+        if (_editingPage is not null)
+        {
+            entity = await context.ContentPages.FindAsync(_editingPage.Id) ?? throw new InvalidOperationException();
+        }
+        else
+        {
+            entity = new ContentPage { PageKey = _editModel.PageKey ?? "" };
+            context.ContentPages.Add(entity);
+        }
+
+        entity.PageTitle = _editModel.PageTitle;
+        entity.Content = _editModel.Content;
+        entity.MetaDescription = _editModel.MetaDescription;
+        entity.MetaKeywords = _editModel.MetaKeywords;
+
+        await context.SaveChangesAsync();
+        Snackbar.Add("Page saved", Severity.Success);
+        _dialogVisible = false;
+        await LoadPages();
+    }
+
+    private class ContentPageModel
+    {
+        public string? PageKey { get; set; }
+        public string? PageTitle { get; set; }
+        public string? Content { get; set; }
+        public string? MetaDescription { get; set; }
+        public string? MetaKeywords { get; set; }
+    }
+}

@@ -1,0 +1,208 @@
+@page "/admin/inquiries"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Service Inquiries — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Service Inquiries</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Review and respond to client inquiries</MudText>
+    </div>
+    <MudChipSet T="string" ReadOnly="true">
+        <MudChip T="string" Color="Color.Info" Size="Size.Small">@(_inquiries.Count(i => i.Status == InquiryStatus.New)) New</MudChip>
+        <MudChip T="string" Color="Color.Warning" Size="Size.Small">@(_inquiries.Count(i => i.Status == InquiryStatus.InProgress)) In Progress</MudChip>
+    </MudChipSet>
+</div>
+
+<MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+    <div class="d-flex gap-3 mb-4">
+        <MudTextField @bind-Value="_searchString" Placeholder="Search inquiries..."
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true" Variant="Variant.Outlined" Style="flex: 1;" />
+        <MudSelect @bind-Value="_statusFilter" Label="Status" Variant="Variant.Outlined"
+                   Style="width: 180px;" Clearable="true">
+            @foreach (var s in Enum.GetValues<InquiryStatus>())
+            {
+                <MudSelectItem T="InquiryStatus?" Value="@((InquiryStatus?)s)">@s</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+
+    <MudTable Items="@FilteredInquiries" Hover="true" Dense="true" Elevation="0"
+              Loading="@_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Contact</MudTh>
+            <MudTh>Company</MudTh>
+            <MudTh>Service</MudTh>
+            <MudTh>Date</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh Style="width: 150px;">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Contact">
+                <MudText Typo="Typo.body2">@context.ContactName</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Email</MudText>
+            </MudTd>
+            <MudTd DataLabel="Company">@(context.CompanyName ?? "—")</MudTd>
+            <MudTd DataLabel="Service">@(context.Service?.Title ?? "General")</MudTd>
+            <MudTd DataLabel="Date">@context.InquiryDate.ToString("d")</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">
+                    @context.Status
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                               OnClick="@(() => ViewInquiry(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="@(() => UpdateStatus(context))" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No inquiries found.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+<!-- View Dialog -->
+<MudDialog @bind-Visible="_viewDialogVisible" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Inquiry Details</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_selectedInquiry is not null)
+        {
+            <MudSimpleTable Dense="true" Elevation="0">
+                <tbody>
+                    <tr><td><strong>Contact</strong></td><td>@_selectedInquiry.ContactName</td></tr>
+                    <tr><td><strong>Email</strong></td><td>@_selectedInquiry.Email</td></tr>
+                    <tr><td><strong>Phone</strong></td><td>@(_selectedInquiry.Phone ?? "—")</td></tr>
+                    <tr><td><strong>Company</strong></td><td>@(_selectedInquiry.CompanyName ?? "—")</td></tr>
+                    <tr><td><strong>Service</strong></td><td>@(_selectedInquiry.Service?.Title ?? "General")</td></tr>
+                    <tr><td><strong>Date</strong></td><td>@_selectedInquiry.InquiryDate.ToString("g")</td></tr>
+                    <tr><td><strong>Status</strong></td><td>@_selectedInquiry.Status</td></tr>
+                </tbody>
+            </MudSimpleTable>
+            <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Message</MudText>
+            <MudPaper Elevation="0" Class="pa-3" Style="background: #F1F5F9;">
+                <MudText Typo="Typo.body2">@(_selectedInquiry.Message ?? "No message provided.")</MudText>
+            </MudPaper>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _viewDialogVisible = false)">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Status Update Dialog -->
+<MudDialog @bind-Visible="_statusDialogVisible" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Update Status</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect @bind-Value="_newStatus" Label="New Status" Variant="Variant.Outlined">
+            @foreach (var s in Enum.GetValues<InquiryStatus>())
+            {
+                <MudSelectItem T="InquiryStatus" Value="@s">@s</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _statusDialogVisible = false)">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveStatus">Update</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ServiceInquiry> _inquiries = [];
+    private bool _loading = true;
+    private string _searchString = "";
+    private InquiryStatus? _statusFilter;
+
+    private bool _viewDialogVisible;
+    private bool _statusDialogVisible;
+    private ServiceInquiry? _selectedInquiry;
+    private InquiryStatus _newStatus;
+
+    private IEnumerable<ServiceInquiry> FilteredInquiries
+    {
+        get
+        {
+            var result = _inquiries.AsEnumerable();
+            if (_statusFilter.HasValue)
+                result = result.Where(i => i.Status == _statusFilter.Value);
+            if (!string.IsNullOrEmpty(_searchString))
+                result = result.Where(i =>
+                    i.ContactName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+                    i.Email.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+                    (i.CompanyName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false));
+            return result;
+        }
+    }
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            _inquiries = await context.ServiceInquiries
+                .Include(i => i.Service)
+                .OrderByDescending(i => i.InquiryDate)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally { _loading = false; }
+    }
+
+    private void ViewInquiry(ServiceInquiry inquiry)
+    {
+        _selectedInquiry = inquiry;
+        _viewDialogVisible = true;
+    }
+
+    private void UpdateStatus(ServiceInquiry inquiry)
+    {
+        _selectedInquiry = inquiry;
+        _newStatus = inquiry.Status;
+        _statusDialogVisible = true;
+    }
+
+    private async Task SaveStatus()
+    {
+        if (_selectedInquiry is null) return;
+
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var entity = await context.ServiceInquiries.FindAsync(_selectedInquiry.Id);
+        if (entity is not null)
+        {
+            entity.Status = _newStatus;
+            if (_newStatus == InquiryStatus.Responded)
+                entity.ResponseDate = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+            Snackbar.Add("Status updated", Severity.Success);
+            _statusDialogVisible = false;
+            await LoadData();
+        }
+    }
+
+    private static Color GetStatusColor(InquiryStatus status) => status switch
+    {
+        InquiryStatus.New => Color.Info,
+        InquiryStatus.InProgress => Color.Warning,
+        InquiryStatus.Responded => Color.Success,
+        InquiryStatus.Closed => Color.Default,
+        _ => Color.Default
+    };
+}

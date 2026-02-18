@@ -1,0 +1,223 @@
+@page "/admin/site-photos"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using OECLWebsite.Infrastructure.Services
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
+
+<PageTitle>Site Photos — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Site Photos</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage hero backgrounds, logo, and site-wide images</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenCreateDialog"
+               Style="text-transform: none;">
+        Add Photo
+    </MudButton>
+</div>
+
+<MudGrid Spacing="4">
+    @if (_loading)
+    {
+        <MudItem xs="12">
+            <div class="d-flex justify-center pa-12">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+            </div>
+        </MudItem>
+    }
+    else
+    {
+        @foreach (var photo in _photos)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2" Class="h-100" Style="border-radius: 12px;">
+                    @if (!string.IsNullOrEmpty(photo.ImageUrl))
+                    {
+                        <MudCardMedia Image="@photo.ImageUrl" Height="180" />
+                    }
+                    else
+                    {
+                        <div style="height: 180px; background: linear-gradient(135deg, #E2E8F0, #F1F5F9); display: flex; align-items: center; justify-content: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Large" Style="color: #94A3B8;" />
+                        </div>
+                    }
+                    <MudCardContent Class="pa-4">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-2">@photo.PhotoKey</MudChip>
+                        <MudText Typo="Typo.subtitle1">@(photo.Title ?? photo.PhotoKey)</MudText>
+                        @if (!string.IsNullOrEmpty(photo.Description))
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">@photo.Description</MudText>
+                        }
+                        <div class="d-flex align-center gap-2 mt-2">
+                            <MudIcon Icon="@(photo.IsActive ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                                     Color="@(photo.IsActive ? Color.Success : Color.Default)" Size="Size.Small" />
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(photo.IsActive ? "Active" : "Inactive")</MudText>
+                        </div>
+                    </MudCardContent>
+                    <MudCardActions Class="pa-4 pt-0">
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Edit"
+                                   OnClick="@(() => OpenEditDialog(photo))"
+                                   Style="text-transform: none;">
+                            Edit
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   OnClick="@(() => DeletePhoto(photo))"
+                                   Style="text-transform: none;">
+                            Delete
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    }
+</MudGrid>
+
+<!-- Create / Edit Dialog -->
+<MudDialog @bind-Visible="_dialogVisible" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingId.HasValue ? "Edit Site Photo" : "Add Site Photo")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_photoKey" Label="Photo Key" Required="true"
+                          RequiredError="Photo key is required"
+                          HelperText="Unique identifier (e.g. hero-home, company-logo)"
+                          Variant="Variant.Outlined" Class="mb-3"
+                          Disabled="@_editingId.HasValue" />
+            <MudTextField @bind-Value="_title" Label="Title" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_description" Label="Description" Variant="Variant.Outlined"
+                          Lines="2" Class="mb-3" />
+            <MudTextField @bind-Value="_altText" Label="Alt Text" Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="_displayOrder" Label="Display Order" Variant="Variant.Outlined" Class="mb-3" />
+            <MudSwitch @bind-Value="_isActive" Label="Active" Color="Color.Success" Class="mb-3" />
+            <ImageUpload @bind-CurrentImageUrl="_imageUrl" Label="Photo" Subfolder="site-photos" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePhoto">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<SitePhoto> _photos = [];
+    private bool _loading = true;
+    private bool _dialogVisible;
+    private MudForm? _form;
+
+    private int? _editingId;
+    private string _photoKey = "";
+    private string _title = "";
+    private string _description = "";
+    private string _altText = "";
+    private string? _imageUrl;
+    private int _displayOrder;
+    private bool _isActive = true;
+
+    protected override async Task OnInitializedAsync() => await LoadPhotos();
+
+    private async Task LoadPhotos()
+    {
+        _loading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            _photos = await context.SitePhotos
+                .OrderBy(p => p.DisplayOrder)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally { _loading = false; }
+    }
+
+    private void OpenCreateDialog()
+    {
+        _editingId = null;
+        _photoKey = "";
+        _title = "";
+        _description = "";
+        _altText = "";
+        _imageUrl = null;
+        _displayOrder = 0;
+        _isActive = true;
+        _dialogVisible = true;
+    }
+
+    private void OpenEditDialog(SitePhoto photo)
+    {
+        _editingId = photo.Id;
+        _photoKey = photo.PhotoKey;
+        _title = photo.Title ?? "";
+        _description = photo.Description ?? "";
+        _altText = photo.AltText ?? "";
+        _imageUrl = photo.ImageUrl;
+        _displayOrder = photo.DisplayOrder;
+        _isActive = photo.IsActive;
+        _dialogVisible = true;
+    }
+
+    private void CloseDialog() => _dialogVisible = false;
+
+    private async Task SavePhoto()
+    {
+        if (_form is not null) await _form.Validate();
+        if (_form?.IsValid != true) return;
+
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        if (_editingId.HasValue)
+        {
+            var entity = await context.SitePhotos.FindAsync(_editingId.Value);
+            if (entity is null) return;
+            entity.Title = _title;
+            entity.Description = _description;
+            entity.AltText = _altText;
+            entity.ImageUrl = _imageUrl;
+            entity.DisplayOrder = _displayOrder;
+            entity.IsActive = _isActive;
+        }
+        else
+        {
+            context.SitePhotos.Add(new SitePhoto
+            {
+                PhotoKey = _photoKey,
+                Title = _title,
+                Description = _description,
+                AltText = _altText,
+                ImageUrl = _imageUrl,
+                DisplayOrder = _displayOrder,
+                IsActive = _isActive,
+            });
+        }
+
+        await context.SaveChangesAsync();
+        Snackbar.Add(_editingId.HasValue ? "Photo updated" : "Photo added", Severity.Success);
+        CloseDialog();
+        await LoadPhotos();
+    }
+
+    private async Task DeletePhoto(SitePhoto photo)
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var entity = await context.SitePhotos.FindAsync(photo.Id);
+        if (entity is not null)
+        {
+            context.SitePhotos.Remove(entity);
+            await context.SaveChangesAsync();
+            Snackbar.Add("Photo deleted", Severity.Success);
+            await LoadPhotos();
+        }
+    }
+}

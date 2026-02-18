@@ -1,0 +1,102 @@
+@inherits LayoutComponentBase
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+
+<MudThemeProvider Theme="OvalTheme.Theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="4" Dense="true" Style="backdrop-filter: blur(8px);">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@ToggleDrawer"
+                       Class="d-md-none" />
+        <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit" Class="ml-1"
+                   Style="text-transform: none;">
+            @if (!string.IsNullOrEmpty(_logoUrl))
+            {
+                <MudImage Src="@_logoUrl" Alt="OECL Logo" Height="32" Class="mr-2" ObjectFit="ObjectFit.Contain" />
+            }
+            <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px;">
+                OVAL ENGINEERING
+            </MudText>
+        </MudButton>
+        <MudSpacer />
+        <NavMenu />
+        <AuthorizeView>
+            <Authorized>
+                <MudButton Href="/admin/dashboard"
+                           Variant="Variant.Filled"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Dashboard"
+                           Class="d-none d-md-flex ml-3"
+                           Style="text-transform: none;">
+                    Dashboard
+                </MudButton>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md">
+        <MudDrawerHeader Class="py-3">
+            @if (!string.IsNullOrEmpty(_logoUrl))
+            {
+                <MudImage Src="@_logoUrl" Alt="OECL Logo" Height="28" Class="mr-2" ObjectFit="ObjectFit.Contain" />
+            }
+            <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">OVAL ENGINEERING</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+            <MudNavLink Href="/about" Icon="@Icons.Material.Filled.Info">About Us</MudNavLink>
+            <MudNavLink Href="/services" Icon="@Icons.Material.Filled.Engineering">Services</MudNavLink>
+            <MudNavLink Href="/projects" Icon="@Icons.Material.Filled.Business">Projects</MudNavLink>
+            <MudNavLink Href="/contact" Icon="@Icons.Material.Filled.ContactMail">Contact</MudNavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <MudDivider Class="my-2" />
+                    <MudNavLink Href="/admin/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+                </Authorized>
+            </AuthorizeView>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Style="display: flex; flex-direction: column; min-height: calc(100vh - 48px);">
+        <div style="flex: 1;">
+            @Body
+        </div>
+        <SiteFooter />
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private bool _drawerOpen;
+    private string? _logoUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var logo = await context.SitePhotos
+            .Where(p => p.PhotoKey == "company-logo" && p.IsActive && !string.IsNullOrEmpty(p.ImageUrl))
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+        _logoUrl = logo?.ImageUrl;
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

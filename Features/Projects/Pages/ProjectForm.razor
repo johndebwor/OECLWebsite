@@ -1,0 +1,374 @@
+@page "/admin/projects/new"
+@page "/admin/projects/edit/{Id:int}"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using OECLWebsite.Infrastructure.Services
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsEdit ? "Edit Project" : "New Project") — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">@(IsEdit ? "Edit Project" : "Create New Project")</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@(IsEdit ? "Update project information and gallery" : "Add a new engineering project")</MudText>
+    </div>
+    <MudButton Href="/admin/projects" Variant="Variant.Outlined" Color="Color.Default"
+               StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small"
+               Style="text-transform: none;">
+        Back to Projects
+    </MudButton>
+</div>
+
+<MudPaper Elevation="2" Class="pa-6" Style="border-radius: 12px;">
+    <MudForm @ref="_form" @bind-IsValid="_formValid">
+        <MudGrid>
+            <MudItem xs="12" sm="8">
+                <MudTextField @bind-Value="_model.ProjectName" Label="Project Name" Required="true"
+                              RequiredError="Project name is required" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_model.ProjectType" Label="Project Type" Variant="Variant.Outlined">
+                    <MudSelectItem T="string" Value="@("FEED")">FEED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("EPCC")">EPCC</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("O&M")">O&M</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Consulting")">Consulting</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Project Management")">Project Management</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_model.Client" Label="Client" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_model.Location" Label="Location" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="_startDate" Label="Start Date" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="_completionDate" Label="Completion Date" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudNumericField @bind-Value="_model.ProjectValue" Label="Project Value (USD)"
+                                 Variant="Variant.Outlined" Format="N2" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.Description" Label="Description"
+                              Variant="Variant.Outlined" Lines="6" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.TechnicalDetails" Label="Technical Details (JSON)"
+                              Variant="Variant.Outlined" Lines="4"
+                              Style="font-family: 'JetBrains Mono', monospace;" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_model.Status" Label="Project Status" Variant="Variant.Outlined">
+                    <MudSelectItem T="ProjectStatus" Value="ProjectStatus.Planned">Planned</MudSelectItem>
+                    <MudSelectItem T="ProjectStatus" Value="ProjectStatus.Ongoing">Ongoing</MudSelectItem>
+                    <MudSelectItem T="ProjectStatus" Value="ProjectStatus.Completed">Completed</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="8">
+                <ImageUpload Label="Featured Image"
+                             ButtonText="Upload Featured Image"
+                             @bind-CurrentImageUrl="_model.FeaturedImageUrl"
+                             Subfolder="projects" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudNumericField @bind-Value="_model.DisplayOrder" Label="Display Order"
+                                 Variant="Variant.Outlined" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudCheckBox @bind-Value="_model.IsShowcase" Label="Showcase on Homepage" Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_model.ApprovalStatus" Label="Approval Status" Variant="Variant.Outlined">
+                    <MudSelectItem T="ApprovalStatus" Value="ApprovalStatus.Draft">Draft</MudSelectItem>
+                    <MudSelectItem T="ApprovalStatus" Value="ApprovalStatus.PendingApproval">Submit for Approval</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        @* === Project Gallery Images === *@
+        <MudText Typo="Typo.h6" Class="mt-6 mb-3">Project Gallery</MudText>
+        <MudPaper Outlined="true" Class="pa-4 mb-4">
+            @if (_galleryImages.Count > 0)
+            {
+                <MudGrid>
+                    @foreach (var (img, index) in _galleryImages.Select((v, i) => (v, i)))
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudCard Outlined="true">
+                                <MudCardMedia Image="@img.ImageUrl" Height="160" />
+                                <MudCardContent Class="pa-2">
+                                    <MudTextField @bind-Value="img.Caption" Label="Caption"
+                                                  Variant="Variant.Text" Margin="Margin.Dense" />
+                                </MudCardContent>
+                                <MudCardActions Class="d-flex justify-space-between">
+                                    <div>
+                                        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
+                                                       Size="Size.Small" Disabled="@(index == 0)"
+                                                       OnClick="@(() => MoveImage(index, -1))"
+                                                       title="Move up" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
+                                                       Size="Size.Small" Disabled="@(index == _galleryImages.Count - 1)"
+                                                       OnClick="@(() => MoveImage(index, 1))"
+                                                       title="Move down" />
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Color="Color.Error" Size="Size.Small"
+                                                   OnClick="@(() => RemoveGalleryImage(index))"
+                                                   title="Remove" />
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                    No gallery images yet. Upload images below.
+                </MudText>
+            }
+
+            <MudFileUpload T="IReadOnlyList<IBrowserFile>" Accept=".jpg,.jpeg,.png,.gif,.webp"
+                           MaximumFileCount="10" FilesChanged="HandleGalleryUpload" Class="mt-3">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.AddPhotoAlternate"
+                               Disabled="_galleryUploading">
+                        @(_galleryUploading ? "Uploading..." : "Add Gallery Images")
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+
+            @if (_galleryUploading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
+            }
+        </MudPaper>
+
+        <div class="d-flex justify-end gap-3 mt-6">
+            <MudButton Variant="Variant.Outlined" Href="/admin/projects">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Disabled="@(!_formValid || _saving)"
+                       OnClick="HandleSave"
+                       StartIcon="@Icons.Material.Filled.Save">
+                @(_saving ? "Saving..." : "Save Project")
+            </MudButton>
+        </div>
+    </MudForm>
+</MudPaper>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private bool IsEdit => Id > 0;
+
+    private MudForm _form = null!;
+    private bool _formValid;
+    private bool _saving;
+    private ProjectModel _model = new();
+    private DateTime? _startDate;
+    private DateTime? _completionDate;
+    private List<GalleryImageModel> _galleryImages = [];
+    private bool _galleryUploading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsEdit) return;
+
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var project = await context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == Id);
+        if (project is not null)
+        {
+            _model = new ProjectModel
+            {
+                ProjectName = project.ProjectName,
+                Client = project.Client,
+                Location = project.Location,
+                ProjectType = project.ProjectType,
+                ProjectValue = project.ProjectValue,
+                Description = project.Description,
+                TechnicalDetails = project.TechnicalDetails,
+                Status = project.Status,
+                FeaturedImageUrl = project.FeaturedImageUrl,
+                IsShowcase = project.IsShowcase,
+                DisplayOrder = project.DisplayOrder,
+                ApprovalStatus = project.ApprovalStatus,
+            };
+            _startDate = project.StartDate?.ToDateTime(TimeOnly.MinValue);
+            _completionDate = project.CompletionDate?.ToDateTime(TimeOnly.MinValue);
+
+            _galleryImages = await context.ProjectImages
+                .Where(pi => pi.ProjectId == Id)
+                .OrderBy(pi => pi.DisplayOrder)
+                .AsNoTracking()
+                .Select(pi => new GalleryImageModel
+                {
+                    Id = pi.Id,
+                    ImageUrl = pi.ImageUrl,
+                    Caption = pi.Caption,
+                    DisplayOrder = pi.DisplayOrder,
+                })
+                .ToListAsync();
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        await _form.Validate();
+        if (!_formValid) return;
+
+        _saving = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            Project entity;
+            if (IsEdit)
+            {
+                entity = await context.Projects.FindAsync(Id) ?? throw new InvalidOperationException("Project not found");
+            }
+            else
+            {
+                entity = new Project();
+                context.Projects.Add(entity);
+            }
+
+            entity.ProjectName = _model.ProjectName;
+            entity.Client = _model.Client;
+            entity.Location = _model.Location;
+            entity.ProjectType = _model.ProjectType;
+            entity.StartDate = _startDate.HasValue ? DateOnly.FromDateTime(_startDate.Value) : null;
+            entity.CompletionDate = _completionDate.HasValue ? DateOnly.FromDateTime(_completionDate.Value) : null;
+            entity.ProjectValue = _model.ProjectValue;
+            entity.Description = _model.Description;
+            entity.TechnicalDetails = _model.TechnicalDetails;
+            entity.Status = _model.Status;
+            entity.FeaturedImageUrl = _model.FeaturedImageUrl;
+            entity.IsShowcase = _model.IsShowcase;
+            entity.DisplayOrder = _model.DisplayOrder;
+            entity.ApprovalStatus = _model.ApprovalStatus;
+
+            await context.SaveChangesAsync();
+
+            // Persist gallery images
+            if (IsEdit)
+            {
+                var existingImages = await context.ProjectImages
+                    .Where(pi => pi.ProjectId == entity.Id)
+                    .ToListAsync();
+                var keepIds = _galleryImages.Where(g => g.Id.HasValue).Select(g => g.Id!.Value).ToHashSet();
+                context.ProjectImages.RemoveRange(existingImages.Where(e => !keepIds.Contains(e.Id)));
+
+                foreach (var existing in existingImages.Where(e => keepIds.Contains(e.Id)))
+                {
+                    var model = _galleryImages.First(g => g.Id == existing.Id);
+                    existing.Caption = model.Caption;
+                    existing.DisplayOrder = model.DisplayOrder;
+                }
+            }
+
+            foreach (var newImg in _galleryImages.Where(g => !g.Id.HasValue))
+            {
+                context.ProjectImages.Add(new ProjectImage
+                {
+                    ProjectId = entity.Id,
+                    ImageUrl = newImg.ImageUrl,
+                    Caption = newImg.Caption,
+                    DisplayOrder = newImg.DisplayOrder,
+                });
+            }
+
+            await context.SaveChangesAsync();
+            Snackbar.Add(IsEdit ? "Project updated" : "Project created", Severity.Success);
+            Navigation.NavigateTo("/admin/projects");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task HandleGalleryUpload(IReadOnlyList<IBrowserFile> files)
+    {
+        _galleryUploading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var uploadService = scope.ServiceProvider.GetRequiredService<IFileUploadService>();
+            var maxSize = 5 * 1024 * 1024;
+
+            foreach (var file in files)
+            {
+                await using var stream = file.OpenReadStream(maxAllowedSize: maxSize);
+                var url = await uploadService.UploadAsync(stream, file.Name, file.Size, "projects");
+                _galleryImages.Add(new GalleryImageModel
+                {
+                    ImageUrl = url,
+                    DisplayOrder = _galleryImages.Count,
+                });
+            }
+            Snackbar.Add($"{files.Count} image(s) uploaded", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _galleryUploading = false;
+        }
+    }
+
+    private void MoveImage(int index, int direction)
+    {
+        var newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= _galleryImages.Count) return;
+        (_galleryImages[index], _galleryImages[newIndex]) = (_galleryImages[newIndex], _galleryImages[index]);
+        for (var i = 0; i < _galleryImages.Count; i++)
+            _galleryImages[i].DisplayOrder = i;
+    }
+
+    private void RemoveGalleryImage(int index)
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var uploadService = scope.ServiceProvider.GetRequiredService<IFileUploadService>();
+        uploadService.Delete(_galleryImages[index].ImageUrl);
+        _galleryImages.RemoveAt(index);
+        for (var i = 0; i < _galleryImages.Count; i++)
+            _galleryImages[i].DisplayOrder = i;
+    }
+
+    private class GalleryImageModel
+    {
+        public int? Id { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string? Caption { get; set; }
+        public int DisplayOrder { get; set; }
+    }
+
+    private class ProjectModel
+    {
+        public string ProjectName { get; set; } = string.Empty;
+        public string? Client { get; set; }
+        public string? Location { get; set; }
+        public string? ProjectType { get; set; }
+        public decimal? ProjectValue { get; set; }
+        public string? Description { get; set; }
+        public string? TechnicalDetails { get; set; }
+        public ProjectStatus Status { get; set; } = ProjectStatus.Planned;
+        public string? FeaturedImageUrl { get; set; }
+        public bool IsShowcase { get; set; }
+        public int DisplayOrder { get; set; }
+        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Draft;
+    }
+}

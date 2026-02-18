@@ -1,0 +1,23 @@
+@page "/auth/access-denied"
+@layout MainLayout
+
+<PageTitle>Access Denied — Oval Engineering</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="min-height: 60vh;">
+    <MudPaper Elevation="2" Class="pa-8 text-center">
+        <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Size="Size.Large" Class="mb-4" />
+        <MudText Typo="Typo.h4" Color="Color.Error" Class="mb-2">Access Denied</MudText>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+            You do not have permission to access this page.
+            Please contact your administrator if you believe this is an error.
+        </MudText>
+        <div class="d-flex justify-center gap-4">
+            <MudButton Href="/" Variant="Variant.Outlined" Color="Color.Primary">
+                Go Home
+            </MudButton>
+            <MudButton Href="/admin/dashboard" Variant="Variant.Filled" Color="Color.Primary">
+                Dashboard
+            </MudButton>
+        </div>
+    </MudPaper>
+</MudContainer>

@@ -1,0 +1,141 @@
+@page "/services"
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+
+<PageTitle>Our Services — Oval Engineering Company Limited</PageTitle>
+
+<!-- Hero -->
+<MudPaper Class="@(_heroUrl != null ? "hero-page-photo pa-12" : "hero-page pa-12")"
+          Style="@(_heroUrl != null ? $"background-image: url('{_heroUrl}');" : "")"
+          Square="true" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Large" Style="position: relative; z-index: 1;">
+        <MudText Typo="Typo.overline" Style="color: #F97316; letter-spacing: 2px;">WHAT WE DO</MudText>
+        <MudText Typo="Typo.h3" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif; font-weight: 700;">
+            Our Services
+        </MudText>
+        <MudText Typo="Typo.body1" Style="color: #94A3B8;" Class="mt-2">
+            Comprehensive engineering solutions across the full project lifecycle
+        </MudText>
+    </MudContainer>
+</MudPaper>
+
+<!-- Service Categories -->
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-12">
+    @if (_loading)
+    {
+        <div class="d-flex justify-center pa-12">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        </div>
+    }
+    else
+    {
+        <MudGrid Spacing="6">
+            @foreach (var category in _categories)
+            {
+                <MudItem xs="12" id="@category.Name.Replace(" ", "-").ToLower()">
+                    <MudPaper Elevation="2" Class="pa-6" Style="border-radius: 12px;">
+                        <div class="d-flex align-center gap-3 mb-5">
+                            <MudAvatar Color="Color.Primary" Size="Size.Large" Style="width: 52px; height: 52px;">
+                                <MudIcon Icon="@GetCategoryIcon(category.IconName)" />
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.h5" Style="font-family: 'Rajdhani', sans-serif;">
+                                    @category.Name
+                                </MudText>
+                                @if (!string.IsNullOrEmpty(category.Description))
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        @category.Description
+                                    </MudText>
+                                }
+                            </div>
+                        </div>
+
+                        @if (category.Services.Any())
+                        {
+                            <MudGrid Spacing="4">
+                                @foreach (var service in category.Services.Where(s => s.IsActive))
+                                {
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <ServiceCard Title="@service.Title"
+                                                     Description="@service.ShortDescription"
+                                                     Category="@category.Name"
+                                                     IconName="@GetCategoryIcon(category.IconName)"
+                                                     ImageUrl="@service.ImageUrl" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                                Services coming soon. Contact us for more information.
+                            </MudAlert>
+                        }
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+<!-- CTA -->
+<MudPaper Class="cta-section py-14" Square="true" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="text-center" Style="position: relative; z-index: 1;">
+        <MudText Typo="Typo.h5" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif;" Class="mb-3">
+            Need a Custom Solution?
+        </MudText>
+        <MudText Typo="Typo.body1" Style="color: #CBD5E1;" Class="mb-5">
+            Our engineering team can tailor services to meet your specific project requirements.
+        </MudText>
+        <MudButton Href="/contact" Variant="Variant.Filled" Color="Color.Secondary"
+                   Size="Size.Large" EndIcon="@Icons.Material.Filled.ArrowForward"
+                   Style="text-transform: none; font-weight: 600;">
+            Request Information
+        </MudButton>
+    </MudContainer>
+</MudPaper>
+
+@code {
+    private List<ServiceCategory> _categories = [];
+    private bool _loading = true;
+    private string? _heroUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var hero = await context.SitePhotos
+                .Where(p => p.PhotoKey == "hero-services" && p.IsActive && !string.IsNullOrEmpty(p.ImageUrl))
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
+            _heroUrl = hero?.ImageUrl;
+
+            _categories = await context.ServiceCategories
+                .Include(c => c.Services.Where(s => s.IsActive && s.ApprovalStatus == ApprovalStatus.Approved))
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.DisplayOrder)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static string GetCategoryIcon(string? iconName) => iconName switch
+    {
+        "Engineering" => Icons.Material.Filled.Engineering,
+        "Construction" => Icons.Material.Filled.Construction,
+        "Build" => Icons.Material.Filled.Build,
+        "Assignment" => Icons.Material.Filled.Assignment,
+        "Support" => Icons.Material.Filled.SupportAgent,
+        _ => Icons.Material.Filled.Engineering
+    };
+}

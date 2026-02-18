@@ -1,0 +1,201 @@
+@page "/admin/services/new"
+@page "/admin/services/edit/{Id:int}"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsEdit ? "Edit Service" : "New Service") — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">@(IsEdit ? "Edit Service" : "Create New Service")</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@(IsEdit ? "Update service details and settings" : "Add a new engineering service offering")</MudText>
+    </div>
+    <MudButton Href="/admin/services" Variant="Variant.Outlined" Color="Color.Default"
+               StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small"
+               Style="text-transform: none;">
+        Back to Services
+    </MudButton>
+</div>
+
+<MudPaper Elevation="2" Class="pa-6" Style="border-radius: 12px;">
+    <MudForm @ref="_form" @bind-IsValid="_formValid">
+        <MudGrid>
+            <MudItem xs="12" sm="8">
+                <MudTextField @bind-Value="_model.Title" Label="Service Title" Required="true"
+                              RequiredError="Title is required" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_model.CategoryId" Label="Category" Required="true"
+                           RequiredError="Category is required" Variant="Variant.Outlined">
+                    @foreach (var cat in _categories)
+                    {
+                        <MudSelectItem T="int" Value="@cat.Id">@cat.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.ShortDescription" Label="Short Description"
+                              Variant="Variant.Outlined" Lines="2" MaxLength="500"
+                              HelperText="Brief overview shown on listing cards (max 500 chars)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.DetailedDescription" Label="Detailed Description"
+                              Variant="Variant.Outlined" Lines="8" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_model.TechnicalSpecs" Label="Technical Specifications (JSON)"
+                              Variant="Variant.Outlined" Lines="4"
+                              Style="font-family: 'JetBrains Mono', monospace;" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <ImageUpload Label="Service Icon"
+                             ButtonText="Upload Icon"
+                             @bind-CurrentImageUrl="_model.IconUrl"
+                             Subfolder="services/icons" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <ImageUpload Label="Service Image"
+                             ButtonText="Upload Image"
+                             @bind-CurrentImageUrl="_model.ImageUrl"
+                             Subfolder="services" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudNumericField @bind-Value="_model.DisplayOrder" Label="Display Order"
+                                 Variant="Variant.Outlined" Min="0" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudCheckBox @bind-Value="_model.IsActive" Label="Active" Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudCheckBox @bind-Value="_model.IsFeatured" Label="Featured" Color="Color.Warning" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_model.ApprovalStatus" Label="Status" Variant="Variant.Outlined">
+                    <MudSelectItem T="ApprovalStatus" Value="ApprovalStatus.Draft">Draft</MudSelectItem>
+                    <MudSelectItem T="ApprovalStatus" Value="ApprovalStatus.PendingApproval">Submit for Approval</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        <div class="d-flex justify-end gap-3 mt-6">
+            <MudButton Variant="Variant.Outlined" Href="/admin/services">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Disabled="@(!_formValid || _saving)"
+                       OnClick="HandleSave"
+                       StartIcon="@Icons.Material.Filled.Save">
+                @(_saving ? "Saving..." : "Save Service")
+            </MudButton>
+        </div>
+    </MudForm>
+</MudPaper>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private bool IsEdit => Id > 0;
+
+    private MudForm _form = null!;
+    private bool _formValid;
+    private bool _saving;
+    private ServiceModel _model = new();
+    private List<ServiceCategory> _categories = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        _categories = await context.ServiceCategories
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.DisplayOrder)
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (IsEdit)
+        {
+            var service = await context.Services.AsNoTracking().FirstOrDefaultAsync(s => s.Id == Id);
+            if (service is not null)
+            {
+                _model = new ServiceModel
+                {
+                    Title = service.Title,
+                    CategoryId = service.CategoryId,
+                    ShortDescription = service.ShortDescription,
+                    DetailedDescription = service.DetailedDescription,
+                    TechnicalSpecs = service.TechnicalSpecs,
+                    IconUrl = service.IconUrl,
+                    ImageUrl = service.ImageUrl,
+                    DisplayOrder = service.DisplayOrder,
+                    IsActive = service.IsActive,
+                    IsFeatured = service.IsFeatured,
+                    ApprovalStatus = service.ApprovalStatus,
+                };
+            }
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        await _form.Validate();
+        if (!_formValid) return;
+
+        _saving = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            Service entity;
+            if (IsEdit)
+            {
+                entity = await context.Services.FindAsync(Id) ?? throw new InvalidOperationException("Service not found");
+            }
+            else
+            {
+                entity = new Service();
+                context.Services.Add(entity);
+            }
+
+            entity.Title = _model.Title;
+            entity.CategoryId = _model.CategoryId;
+            entity.ShortDescription = _model.ShortDescription;
+            entity.DetailedDescription = _model.DetailedDescription;
+            entity.TechnicalSpecs = _model.TechnicalSpecs;
+            entity.IconUrl = _model.IconUrl;
+            entity.ImageUrl = _model.ImageUrl;
+            entity.DisplayOrder = _model.DisplayOrder;
+            entity.IsActive = _model.IsActive;
+            entity.IsFeatured = _model.IsFeatured;
+            entity.ApprovalStatus = _model.ApprovalStatus;
+
+            await context.SaveChangesAsync();
+            Snackbar.Add(IsEdit ? "Service updated" : "Service created", Severity.Success);
+            Navigation.NavigateTo("/admin/services");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+
+    private class ServiceModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public int CategoryId { get; set; }
+        public string? ShortDescription { get; set; }
+        public string? DetailedDescription { get; set; }
+        public string? TechnicalSpecs { get; set; }
+        public string? IconUrl { get; set; }
+        public string? ImageUrl { get; set; }
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+        public bool IsFeatured { get; set; }
+        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Draft;
+    }
+}

@@ -1,0 +1,72 @@
+@* Reusable card for displaying a project in the portfolio *@
+
+<MudCard Elevation="2" Class="h-100 card-hover" Style="border-radius: 12px;">
+    @if (!string.IsNullOrEmpty(ImageUrl))
+    {
+        <MudCardMedia Image="@ImageUrl" Height="200" Style="border-radius: 12px 12px 0 0;" />
+    }
+    <MudCardContent Class="pa-5">
+        <div class="d-flex justify-space-between align-center mb-2">
+            <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif;">@ProjectName</MudText>
+            <MudChip T="string" Size="Size.Small"
+                     Color="@GetStatusColor()" Variant="Variant.Filled">
+                @Status
+            </MudChip>
+        </div>
+        @if (!string.IsNullOrEmpty(Client))
+        {
+            <div class="d-flex align-center gap-2 mb-1">
+                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" Color="Color.Secondary" />
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Client</MudText>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Location))
+        {
+            <div class="d-flex align-center gap-2 mb-1">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Color="Color.Secondary" />
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Location</MudText>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(ProjectType))
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-2">
+                @ProjectType
+            </MudChip>
+        }
+        @if (!string.IsNullOrEmpty(Description))
+        {
+            <MudText Typo="Typo.body2" Class="mt-3" Color="Color.Secondary">
+                @(Description.Length > 150 ? Description[..150] + "..." : Description)
+            </MudText>
+        }
+    </MudCardContent>
+    <MudCardActions Class="pa-5 pt-0">
+        @if (!string.IsNullOrEmpty(DetailUrl))
+        {
+            <MudButton Href="@DetailUrl" Variant="Variant.Text" Color="Color.Primary"
+                       EndIcon="@Icons.Material.Filled.ArrowForward"
+                       Style="text-transform: none;">
+                View Details
+            </MudButton>
+        }
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public string ProjectName { get; set; } = string.Empty;
+    [Parameter] public string? Client { get; set; }
+    [Parameter] public string? Location { get; set; }
+    [Parameter] public string? ProjectType { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Status { get; set; }
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public string? DetailUrl { get; set; }
+
+    private Color GetStatusColor() => Status switch
+    {
+        "Completed" => Color.Success,
+        "Ongoing" => Color.Info,
+        "Planned" => Color.Warning,
+        _ => Color.Default
+    };
+}

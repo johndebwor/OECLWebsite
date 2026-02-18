@@ -1,0 +1,350 @@
+@page "/"
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+
+<PageTitle>Oval Engineering Company Limited — Oil & Gas Engineering Services</PageTitle>
+
+<!-- Hero Section -->
+<MudPaper Class="@(_heroUrl != null ? "hero-section-photo pa-16 mb-0" : "hero-section pa-16 mb-0")"
+          Style="@(_heroUrl != null ? $"min-height: 580px; background-image: url('{_heroUrl}');" : "min-height: 580px;")"
+          Square="true" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Large" Class="hero-content">
+        <MudGrid Class="align-center" Style="min-height: 460px;">
+            <MudItem xs="12" md="7">
+                @if (!string.IsNullOrEmpty(_logoUrl))
+                {
+                    <MudImage Src="@_logoUrl" Alt="Oval Engineering Company Limited"
+                              Height="48" ObjectFit="ObjectFit.Contain" Class="mb-4" />
+                }
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                         Style="color: #F97316; border-color: #F97316; margin-bottom: 1rem;">
+                    South Sudan's Leading Engineering Firm
+                </MudChip>
+                <MudText Typo="Typo.h1" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif; font-weight: 700; line-height: 1.1;">
+                    Engineering Excellence
+                </MudText>
+                <MudText Typo="Typo.h1" Style="color: #F97316; font-family: 'Rajdhani', sans-serif; font-weight: 700; line-height: 1.1;">
+                    in Oil & Gas
+                </MudText>
+                <MudText Typo="Typo.h6" Class="mt-4 mb-8" Style="color: #94A3B8; max-width: 560px; font-weight: 400; line-height: 1.7;">
+                    Delivering precision engineering services across the full project lifecycle — from
+                    front-end design through construction, commissioning, and operations.
+                </MudText>
+                <div class="d-flex gap-4 flex-wrap">
+                    <MudButton Href="/services" Variant="Variant.Filled" Color="Color.Secondary"
+                               Size="Size.Large" EndIcon="@Icons.Material.Filled.ArrowForward"
+                               Style="text-transform: none; font-weight: 600; padding: 12px 28px;">
+                        Explore Services
+                    </MudButton>
+                    <MudButton Href="/contact" Variant="Variant.Outlined"
+                               Size="Size.Large"
+                               Style="color: #F8FAFC; border-color: rgba(248,250,252,0.3); text-transform: none; font-weight: 600; padding: 12px 28px;">
+                        Get in Touch
+                    </MudButton>
+                </div>
+            </MudItem>
+            <MudItem xs="12" md="5" Class="d-none d-md-flex justify-center align-center">
+                <MudPaper Elevation="0" Style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 2.5rem;">
+                    <MudGrid>
+                        <MudItem xs="6" Class="text-center pa-3">
+                            <MudText Typo="Typo.h3" Style="color: #F97316; font-family: 'Rajdhani', sans-serif; font-weight: 700;">10+</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Years Experience</MudText>
+                        </MudItem>
+                        <MudItem xs="6" Class="text-center pa-3">
+                            <MudText Typo="Typo.h3" Style="color: #3E92CC; font-family: 'Rajdhani', sans-serif; font-weight: 700;">50+</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Projects Delivered</MudText>
+                        </MudItem>
+                        <MudItem xs="6" Class="text-center pa-3">
+                            <MudText Typo="Typo.h3" Style="color: #3E92CC; font-family: 'Rajdhani', sans-serif; font-weight: 700;">100+</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Engineers & Staff</MudText>
+                        </MudItem>
+                        <MudItem xs="6" Class="text-center pa-3">
+                            <MudText Typo="Typo.h3" Style="color: #F97316; font-family: 'Rajdhani', sans-serif; font-weight: 700;">5</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Core Services</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</MudPaper>
+
+<!-- Mobile Stats -->
+<MudPaper Class="stats-bar py-6 d-md-none" Square="true" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Large">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="6" Class="text-center">
+                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">10+</MudText>
+                <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Years Experience</MudText>
+            </MudItem>
+            <MudItem xs="6" Class="text-center">
+                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">50+</MudText>
+                <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Projects Delivered</MudText>
+            </MudItem>
+            <MudItem xs="6" Class="text-center">
+                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">100+</MudText>
+                <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Engineers & Staff</MudText>
+            </MudItem>
+            <MudItem xs="6" Class="text-center">
+                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">5</MudText>
+                <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Core Services</MudText>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</MudPaper>
+
+<!-- About Snapshot — Asymmetrical Layout -->
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-16">
+    <MudGrid Spacing="8" Class="align-center">
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="0" Style="@(_aboutUrl != null
+                ? $"position: relative; border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, rgba(10,36,99,0.85), rgba(30,58,110,0.85)), url('{_aboutUrl}') center/cover no-repeat; padding: 2.5rem;"
+                : "position: relative; border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, #0A2463 0%, #1E3A6E 100%); padding: 2.5rem;")">
+                @if (_aboutUrl == null)
+                {
+                    <div style="position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(249,115,22,0.15);"></div>
+                    <div style="position: absolute; bottom: -20px; left: -20px; width: 80px; height: 80px; border-radius: 50%; background: rgba(62,146,204,0.15);"></div>
+                }
+                <MudIcon Icon="@Icons.Material.Filled.Engineering" Style="font-size: 3rem; color: #F97316; margin-bottom: 1.5rem;" />
+                <MudText Typo="Typo.h3" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif; font-weight: 700; line-height: 1.2;" Class="mb-3">
+                    Building South Sudan's Energy Future
+                </MudText>
+                <MudText Typo="Typo.body1" Style="color: #94A3B8; line-height: 1.8;">
+                    With over a decade of experience, Oval Engineering is the trusted partner for oil and gas
+                    operators seeking world-class engineering solutions delivered with local expertise.
+                </MudText>
+                <MudButton Href="/about" Variant="Variant.Text" Color="Color.Secondary"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           Style="text-transform: none; margin-top: 1.5rem; font-weight: 600;">
+                    Learn About Us
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudGrid Spacing="4">
+                @foreach (var cap in _capabilities)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudPaper Elevation="1" Class="pa-5 h-100" Style="@($"border-radius: 12px; border-left: 4px solid {cap.BorderColor};")">
+                            <MudIcon Icon="@cap.Icon" Style="@($"color: {cap.BorderColor}; margin-bottom: 0.75rem;")" />
+                            <MudText Typo="Typo.subtitle1" Style="font-family: 'Rajdhani', sans-serif; font-weight: 600;" Class="mb-1">
+                                @cap.Title
+                            </MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@cap.Desc</MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<!-- Services — Staggered Grid -->
+<MudPaper Class="section-alt py-16" Square="true" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Large">
+        <MudGrid Spacing="6">
+            <MudItem xs="12" md="4" Class="d-flex flex-column justify-center">
+                <MudText Typo="Typo.overline" Style="color: #F97316; letter-spacing: 2px;">WHAT WE DO</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-3"
+                         Style="font-family: 'Rajdhani', sans-serif;">
+                    Our Core Services
+                </MudText>
+                <div class="divider-accent-left mb-4"></div>
+                <MudText Typo="Typo.body1" Color="Color.Secondary" Style="line-height: 1.8;">
+                    From initial concept through to operations and maintenance, we deliver end-to-end engineering
+                    solutions that meet the highest international standards.
+                </MudText>
+                <MudButton Href="/services" Variant="Variant.Outlined" Color="Color.Primary"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           Style="text-transform: none; font-weight: 600; margin-top: 1.5rem; align-self: flex-start;">
+                    View All Services
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" md="8">
+                <MudGrid Spacing="4">
+                    @foreach (var svc in _services)
+                    {
+                        <MudItem xs="12" sm="6">
+                            <MudCard Elevation="2" Class="h-100 card-hover" Style="border-radius: 12px;">
+                                <MudCardContent Class="pa-5">
+                                    <div class="d-flex align-center gap-3 mb-3">
+                                        <MudAvatar Color="@svc.Color" Size="Size.Medium" Variant="Variant.Outlined">
+                                            <MudIcon Icon="@svc.Icon" Size="Size.Small" />
+                                        </MudAvatar>
+                                        <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif;">
+                                            @svc.Title
+                                        </MudText>
+                                    </div>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        @svc.Description
+                                    </MudText>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</MudPaper>
+
+<!-- Why Choose Us — Asymmetric Cards -->
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-16">
+    <div class="text-center mb-10">
+        <MudText Typo="Typo.overline" Style="color: #F97316; letter-spacing: 2px;">OUR EDGE</MudText>
+        <MudText Typo="Typo.h3" Color="Color.Primary"
+                 Style="font-family: 'Rajdhani', sans-serif;">
+            Why Choose Oval Engineering
+        </MudText>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-2 mb-3">
+            Trusted by leading operators in South Sudan's oil and gas sector
+        </MudText>
+        <div class="divider-accent"></div>
+    </div>
+
+    <MudGrid Spacing="4">
+        <!-- Large featured card -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-8 h-100"
+                      Style="border-radius: 16px; background: linear-gradient(135deg, #0A2463 0%, #132B5E 100%); position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(249,115,22,0.1);"></div>
+                <MudIcon Icon="@Icons.Material.Filled.Security" Style="font-size: 2.5rem; color: #F97316; margin-bottom: 1.5rem;" />
+                <MudText Typo="Typo.h4" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif; font-weight: 700;" Class="mb-3">
+                    Safety & Compliance
+                </MudText>
+                <MudText Typo="Typo.body1" Style="color: #94A3B8; line-height: 1.8;">
+                    Zero-harm workplace with rigorous HSE standards on every project. We maintain full compliance
+                    with international safety regulations and local requirements, ensuring every team member
+                    goes home safely.
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        <!-- Stacked smaller cards -->
+        <MudItem xs="12" md="6">
+            <MudGrid Spacing="4">
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+                        <div class="d-flex align-start gap-4">
+                            <MudAvatar Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Large">
+                                <MudIcon Icon="@Icons.Material.Filled.Star" />
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif;" Class="mb-1">Technical Excellence</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Best-in-class engineering practices with experienced professionals who bring
+                                    international expertise to every project.
+                                </MudText>
+                            </div>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+                        <div class="d-flex align-start gap-4">
+                            <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Large">
+                                <MudIcon Icon="@Icons.Material.Filled.LocationOn" />
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif;" Class="mb-1">Local Expertise</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Deep knowledge of South Sudan's operational landscape, regulatory environment,
+                                    and logistics challenges.
+                                </MudText>
+                            </div>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+                        <div class="d-flex align-start gap-4">
+                            <MudAvatar Color="Color.Tertiary" Variant="Variant.Outlined" Size="Size.Large">
+                                <MudIcon Icon="@Icons.Material.Filled.Handshake" />
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif;" Class="mb-1">Trusted Partner</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Proven track record with major operators — delivering on time, on budget,
+                                    and to specification.
+                                </MudText>
+                            </div>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<!-- CTA Section -->
+<MudPaper Class="@(_ctaUrl != null ? "cta-section-photo py-16" : "cta-section py-16")"
+          Style="@(_ctaUrl != null ? $"background-image: url('{_ctaUrl}');" : "")"
+          Square="true" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="text-center" Style="position: relative; z-index: 1;">
+        <MudText Typo="Typo.h4" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif;" Class="mb-3">
+            Ready to Start Your Next Project?
+        </MudText>
+        <MudText Typo="Typo.body1" Style="color: #CBD5E1;" Class="mb-6">
+            Contact us today to discuss how we can deliver engineering excellence for your operations.
+        </MudText>
+        <div class="d-flex justify-center gap-4 flex-wrap">
+            <MudButton Href="/contact" Variant="Variant.Filled" Color="Color.Secondary"
+                       Size="Size.Large" EndIcon="@Icons.Material.Filled.Send"
+                       Style="text-transform: none; font-weight: 600;">
+                Get in Touch
+            </MudButton>
+            <MudButton Href="/projects" Variant="Variant.Outlined"
+                       Size="Size.Large"
+                       Style="color: #F8FAFC; border-color: rgba(248,250,252,0.3); text-transform: none; font-weight: 600;">
+                View Our Work
+            </MudButton>
+        </div>
+    </MudContainer>
+</MudPaper>
+
+@code {
+    private string? _heroUrl;
+    private string? _ctaUrl;
+    private string? _logoUrl;
+    private string? _aboutUrl;
+
+    private record ServiceItem(string Icon, string Title, string Description, Color Color);
+    private record CapabilityItem(string Icon, string Title, string Desc, string BorderColor);
+
+    private static readonly string[] PhotoKeys = ["hero-home", "cta-background", "company-logo", "about-team"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var photos = await context.SitePhotos
+            .Where(p => PhotoKeys.Contains(p.PhotoKey) && p.IsActive && !string.IsNullOrEmpty(p.ImageUrl))
+            .AsNoTracking()
+            .ToListAsync();
+        _heroUrl = photos.FirstOrDefault(p => p.PhotoKey == "hero-home")?.ImageUrl;
+        _ctaUrl = photos.FirstOrDefault(p => p.PhotoKey == "cta-background")?.ImageUrl;
+        _logoUrl = photos.FirstOrDefault(p => p.PhotoKey == "company-logo")?.ImageUrl;
+        _aboutUrl = photos.FirstOrDefault(p => p.PhotoKey == "about-team")?.ImageUrl;
+    }
+
+    private readonly List<ServiceItem> _services =
+    [
+        new(Icons.Material.Filled.Engineering, "Engineering & Design",
+            "Front-End Engineering Design (FEED), feasibility studies, and detailed engineering for oil and gas facilities.", Color.Primary),
+        new(Icons.Material.Filled.Construction, "Construction & Installation",
+            "Full EPCC capabilities — Engineering, Procurement, Construction, and Commissioning delivered on time.", Color.Secondary),
+        new(Icons.Material.Filled.Build, "Operations & Maintenance",
+            "Facility operations, preventive maintenance, asset integrity management, and turnaround services.", Color.Tertiary),
+        new(Icons.Material.Filled.Assignment, "Project Management",
+            "Comprehensive planning, scheduling, cost control, and risk management across the project lifecycle.", Color.Primary),
+    ];
+
+    private readonly List<CapabilityItem> _capabilities =
+    [
+        new(Icons.Material.Filled.Verified, "ISO Certified", "International quality and safety management systems across all operations.", "#F97316"),
+        new(Icons.Material.Filled.Groups, "Expert Team", "Multidisciplinary team of 100+ engineers and technical specialists.", "#3E92CC"),
+        new(Icons.Material.Filled.Speed, "On-Time Delivery", "Consistent track record of delivering complex projects within schedule.", "#0A2463"),
+        new(Icons.Material.Filled.Public, "Local Impact", "Developing South Sudanese talent and supporting community growth.", "#F97316"),
+    ];
+}

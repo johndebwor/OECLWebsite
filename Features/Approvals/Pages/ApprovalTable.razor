@@ -1,0 +1,52 @@
+@using OECLWebsite.Data.Entities
+
+<MudTable Items="@Items" Hover="true" Dense="true" Elevation="0">
+    <HeaderContent>
+        <MudTh>Type</MudTh>
+        <MudTh>Requested By</MudTh>
+        <MudTh>Date</MudTh>
+        <MudTh>Level</MudTh>
+        <MudTh>Comments</MudTh>
+        @if (!ReadOnly)
+        {
+            <MudTh Style="width: 200px;">Actions</MudTh>
+        }
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Type">
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.EntityType</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Requester">@context.Requester?.FullName</MudTd>
+        <MudTd DataLabel="Date">@context.RequestDate.ToString("d")</MudTd>
+        <MudTd DataLabel="Level">@context.ApproverLevel</MudTd>
+        <MudTd DataLabel="Comments">@(context.Comments ?? "—")</MudTd>
+        @if (!ReadOnly)
+        {
+            <MudTd>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                           OnClick="@(() => Approve(context))" Class="mr-1">
+                    Approve
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                           OnClick="@(() => Reject(context))">
+                    Reject
+                </MudButton>
+            </MudTd>
+        }
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Color="Color.Secondary">No items in this queue.</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    [Parameter] public List<ApprovalWorkflow> Items { get; set; } = [];
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public EventCallback<(int WorkflowId, ApprovalStatus NewStatus, string? Comments)> OnAction { get; set; }
+
+    private Task Approve(ApprovalWorkflow workflow) =>
+        OnAction.InvokeAsync((workflow.Id, ApprovalStatus.Approved, null));
+
+    private Task Reject(ApprovalWorkflow workflow) =>
+        OnAction.InvokeAsync((workflow.Id, ApprovalStatus.Rejected, null));
+}

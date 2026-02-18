@@ -1,0 +1,90 @@
+@* Site footer with company info and links *@
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+
+<footer class="site-footer mt-auto">
+    <MudContainer MaxWidth="MaxWidth.Large" Class="py-10">
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="4">
+                @if (!string.IsNullOrEmpty(_logoUrl))
+                {
+                    <MudImage Src="@_logoUrl" Alt="OECL Logo" Height="36" Class="mb-3" ObjectFit="ObjectFit.Contain" />
+                }
+                <MudText Typo="Typo.h6" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px;" Class="mb-3">
+                    OVAL ENGINEERING
+                </MudText>
+                <div class="divider-accent-left mb-4"></div>
+                <MudText Typo="Typo.body2" Style="color: #94A3B8; line-height: 1.7;" Class="mb-2">
+                    Leading Oil & Gas engineering services provider in South Sudan, delivering precision
+                    and innovation across the full project lifecycle.
+                </MudText>
+            </MudItem>
+
+            <MudItem xs="6" md="2">
+                <MudText Typo="Typo.subtitle2" Style="color: #F97316;" Class="mb-3">Quick Links</MudText>
+                <MudNavMenu Dense="true">
+                    <MudNavLink Href="/" Style="color: #94A3B8;">Home</MudNavLink>
+                    <MudNavLink Href="/about" Style="color: #94A3B8;">About Us</MudNavLink>
+                    <MudNavLink Href="/services" Style="color: #94A3B8;">Services</MudNavLink>
+                    <MudNavLink Href="/projects" Style="color: #94A3B8;">Projects</MudNavLink>
+                </MudNavMenu>
+            </MudItem>
+
+            <MudItem xs="6" md="3">
+                <MudText Typo="Typo.subtitle2" Style="color: #F97316;" Class="mb-3">Services</MudText>
+                <MudNavMenu Dense="true">
+                    <MudNavLink Href="/services" Style="color: #94A3B8;">Engineering & Design</MudNavLink>
+                    <MudNavLink Href="/services" Style="color: #94A3B8;">Construction (EPCC)</MudNavLink>
+                    <MudNavLink Href="/services" Style="color: #94A3B8;">Operations & Maintenance</MudNavLink>
+                    <MudNavLink Href="/services" Style="color: #94A3B8;">Project Management</MudNavLink>
+                </MudNavMenu>
+            </MudItem>
+
+            <MudItem xs="12" md="3">
+                <MudText Typo="Typo.subtitle2" Style="color: #F97316;" Class="mb-3">Contact</MudText>
+                <div class="d-flex align-center gap-2 mb-2">
+                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Style="color: #64748B;" />
+                    <MudText Typo="Typo.body2" Style="color: #94A3B8;">Amarat, Juba, South Sudan</MudText>
+                </div>
+                <div class="d-flex align-center gap-2 mb-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Style="color: #64748B;" />
+                    <MudText Typo="Typo.body2" Style="color: #94A3B8;">+211 (0) 912 000 000</MudText>
+                </div>
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Style="color: #64748B;" />
+                    <MudText Typo="Typo.body2" Style="color: #94A3B8;">info@oecl-ss.com</MudText>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+
+    <MudDivider DividerType="DividerType.FullWidth" Style="border-color: #1E293B;" />
+    <MudContainer MaxWidth="MaxWidth.Large">
+        <div class="d-flex justify-space-between align-center py-4 flex-wrap">
+            <MudText Typo="Typo.caption" Style="color: #475569;">
+                &copy; @DateTime.Now.Year Oval Engineering Company Limited. All rights reserved.
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #475569;">
+                <MudLink Href="/auth/login" Typo="Typo.caption" Underline="Underline.Hover"
+                         Style="color: #475569; font-size: inherit; font-family: inherit;">Staff Login</MudLink>
+            </MudText>
+        </div>
+    </MudContainer>
+</footer>
+
+@code {
+    private string? _logoUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var logo = await context.SitePhotos
+            .Where(p => p.PhotoKey == "company-logo" && p.IsActive && !string.IsNullOrEmpty(p.ImageUrl))
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+        _logoUrl = logo?.ImageUrl;
+    }
+}

@@ -1,0 +1,89 @@
+@using OECLWebsite.Infrastructure.Services
+@inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
+
+<div>
+    <MudText Typo="Typo.body2" Class="mb-2">@Label</MudText>
+
+    @if (!string.IsNullOrEmpty(CurrentImageUrl))
+    {
+        <div class="d-flex align-center gap-3 mb-3">
+            <MudImage Src="@CurrentImageUrl" Alt="@Label" Width="160" Height="120"
+                      ObjectFit="ObjectFit.Cover" Elevation="2" Class="rounded" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                           Size="Size.Small" OnClick="HandleRemove"
+                           title="Remove image" />
+        </div>
+    }
+
+    <MudFileUpload T="IBrowserFile" Accept="@AcceptString"
+                   MaximumFileCount="1" FilesChanged="HandleFileSelected">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.CloudUpload"
+                       Disabled="_uploading">
+                @(_uploading ? "Uploading..." : ButtonText)
+            </MudButton>
+        </ActivatorContent>
+    </MudFileUpload>
+
+    @if (_uploading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Image";
+    [Parameter] public string ButtonText { get; set; } = "Choose Image";
+    [Parameter] public string? CurrentImageUrl { get; set; }
+    [Parameter] public EventCallback<string?> CurrentImageUrlChanged { get; set; }
+    [Parameter] public string Subfolder { get; set; } = "general";
+
+    private bool _uploading;
+    private const string AcceptString = ".jpg,.jpeg,.png,.gif,.webp";
+
+    private async Task HandleFileSelected(IBrowserFile file)
+    {
+        _uploading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var uploadService = scope.ServiceProvider.GetRequiredService<IFileUploadService>();
+
+            if (!string.IsNullOrEmpty(CurrentImageUrl))
+            {
+                uploadService.Delete(CurrentImageUrl);
+            }
+
+            var maxSize = 5 * 1024 * 1024;
+            await using var stream = file.OpenReadStream(maxAllowedSize: maxSize);
+            var url = await uploadService.UploadAsync(stream, file.Name, file.Size, Subfolder);
+
+            CurrentImageUrl = url;
+            await CurrentImageUrlChanged.InvokeAsync(url);
+            Snackbar.Add("Image uploaded successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private async Task HandleRemove()
+    {
+        if (string.IsNullOrEmpty(CurrentImageUrl)) return;
+
+        using var scope = ServiceProvider.CreateScope();
+        var uploadService = scope.ServiceProvider.GetRequiredService<IFileUploadService>();
+        uploadService.Delete(CurrentImageUrl);
+
+        CurrentImageUrl = null;
+        await CurrentImageUrlChanged.InvokeAsync(null);
+        Snackbar.Add("Image removed", Severity.Info);
+    }
+}

@@ -1,0 +1,18 @@
+@page "/auth/logout"
+@layout MainLayout
+
+<PageTitle>Signing Out — Oval Engineering</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="min-height: 60vh;">
+    <MudPaper Elevation="2" Class="pa-8 text-center">
+        <MudIcon Icon="@Icons.Material.Filled.Logout" Color="Color.Primary" Size="Size.Large" Class="mb-4" />
+        <MudText Typo="Typo.h5" Class="mb-2">Signing Out...</MudText>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+            You are being signed out. Redirecting...
+        </MudText>
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+        <MudButton Href="/api/auth/logout" Variant="Variant.Filled" Color="Color.Primary">
+            Click here if not redirected
+        </MudButton>
+    </MudPaper>
+</MudContainer>

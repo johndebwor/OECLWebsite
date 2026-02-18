@@ -1,0 +1,76 @@
+@page "/auth/login"
+@layout MainLayout
+
+<PageTitle>Sign In — Oval Engineering</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center" Style="min-height: 80vh;">
+    <MudPaper Elevation="4" Class="pa-8 mx-auto" Style="width: 100%; max-width: 450px;">
+        <div class="d-flex flex-column align-center mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.Engineering"
+                     Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+            <MudText Typo="Typo.h4" Color="Color.Primary"
+                     Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">
+                OVAL ENGINEERING
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Sign in to your account
+            </MudText>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <form method="post" action="/api/auth/login-form">
+            <div class="mb-4">
+                <label class="mud-input-label" for="email">Email</label>
+                <input type="email" id="email" name="email" required
+                       class="mud-input-slot mud-input-root mud-input-root-outlined"
+                       style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;" />
+            </div>
+
+            <div class="mb-4">
+                <label class="mud-input-label" for="password">Password</label>
+                <input type="password" id="password" name="password" required
+                       class="mud-input-slot mud-input-root mud-input-root-outlined"
+                       style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem;" />
+            </div>
+
+            <div class="d-flex align-center mb-4">
+                <input type="checkbox" id="rememberMe" name="rememberMe" value="true" style="margin-right: 8px;" />
+                <label for="rememberMe" style="font-size: 0.875rem;">Remember me</label>
+            </div>
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       Class="mb-4">
+                Sign In
+            </MudButton>
+        </form>
+
+        <MudDivider Class="my-4" />
+        <div class="d-flex justify-center">
+            <MudButton Href="/" Variant="Variant.Text" Color="Color.Default" Size="Size.Small">
+                Back to Website
+            </MudButton>
+        </div>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string? _errorMessage;
+
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _errorMessage = Error;
+    }
+}

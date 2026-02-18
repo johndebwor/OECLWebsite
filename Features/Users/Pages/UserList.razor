@@ -1,0 +1,242 @@
+@page "/admin/users"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireDepartmentHead")]
+@using OECLWebsite.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<ApplicationRole> RoleManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>User Management — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Users</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage user accounts and permissions</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.PersonAdd"
+               OnClick="OpenCreateDialog"
+               Style="text-transform: none;">
+        Add User
+    </MudButton>
+</div>
+
+<MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search users..."
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true" Variant="Variant.Outlined" Class="mb-4" />
+
+    <MudTable Items="@FilteredUsers" Hover="true" Dense="true" Elevation="0"
+              Loading="@_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Department</MudTh>
+            <MudTh>Role</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh Style="width: 120px;">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.User.FullName</MudTd>
+            <MudTd DataLabel="Email">@context.User.Email</MudTd>
+            <MudTd DataLabel="Department">@(context.User.Department ?? "—")</MudTd>
+            <MudTd DataLabel="Role">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Role</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Status">
+                <MudIcon Icon="@(context.User.IsActive ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                         Color="@(context.User.IsActive ? Color.Success : Color.Error)" Size="Size.Small" />
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="@(() => OpenEditDialog(context))" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No users found.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+<!-- Create / Edit User Dialog -->
+<MudDialog @bind-Visible="_dialogVisible" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingUserId is not null ? "Edit User" : "Add User")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_fullName" Label="Full Name" Required="true"
+                          RequiredError="Full name is required" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_email" Label="Email" Required="true" InputType="InputType.Email"
+                          RequiredError="Email is required" Variant="Variant.Outlined" Class="mb-3"
+                          Disabled="@(_editingUserId is not null)" />
+            @if (_editingUserId is null)
+            {
+                <MudTextField @bind-Value="_password" Label="Password" Required="true" InputType="InputType.Password"
+                              RequiredError="Password is required" Variant="Variant.Outlined" Class="mb-3" />
+            }
+            <MudTextField @bind-Value="_employeeId" Label="Employee ID"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_department" Label="Department"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_position" Label="Position"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudSelect @bind-Value="_selectedRole" Label="Role" Variant="Variant.Outlined" Class="mb-3"
+                       Required="true" RequiredError="Role is required">
+                @foreach (var role in _roles)
+                {
+                    <MudSelectItem T="string" Value="@role.Name">@role.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSwitch @bind-Value="_isActive" Label="Active" Color="Color.Success" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveUser">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private record UserViewModel(ApplicationUser User, string Role);
+
+    private List<UserViewModel> _users = [];
+    private List<ApplicationRole> _roles = [];
+    private bool _loading = true;
+    private string _searchString = "";
+    private bool _dialogVisible;
+    private MudForm? _form;
+
+    // Form fields
+    private string? _editingUserId;
+    private string _fullName = "";
+    private string _email = "";
+    private string _password = "";
+    private string? _employeeId;
+    private string? _department;
+    private string? _position;
+    private string? _selectedRole;
+    private bool _isActive = true;
+
+    private IEnumerable<UserViewModel> FilteredUsers => string.IsNullOrEmpty(_searchString)
+        ? _users
+        : _users.Where(u =>
+            u.User.FullName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+            (u.User.Email?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (u.User.Department?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _roles = await RoleManager.Roles.OrderBy(r => r.PermissionLevel).ToListAsync();
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _loading = true;
+        try
+        {
+            var users = await UserManager.Users.OrderBy(u => u.FullName).ToListAsync();
+            var viewModels = new List<UserViewModel>();
+            foreach (var user in users)
+            {
+                var roles = await UserManager.GetRolesAsync(user);
+                viewModels.Add(new UserViewModel(user, roles.FirstOrDefault() ?? "None"));
+            }
+            _users = viewModels;
+        }
+        finally { _loading = false; }
+    }
+
+    private void OpenCreateDialog()
+    {
+        _editingUserId = null;
+        _fullName = "";
+        _email = "";
+        _password = "";
+        _employeeId = null;
+        _department = null;
+        _position = null;
+        _selectedRole = _roles.LastOrDefault()?.Name;
+        _isActive = true;
+        _dialogVisible = true;
+    }
+
+    private void OpenEditDialog(UserViewModel vm)
+    {
+        _editingUserId = vm.User.Id;
+        _fullName = vm.User.FullName;
+        _email = vm.User.Email ?? "";
+        _password = "";
+        _employeeId = vm.User.EmployeeId;
+        _department = vm.User.Department;
+        _position = vm.User.Position;
+        _selectedRole = vm.Role;
+        _isActive = vm.User.IsActive;
+        _dialogVisible = true;
+    }
+
+    private void CloseDialog() => _dialogVisible = false;
+
+    private async Task SaveUser()
+    {
+        if (_form is not null) await _form.Validate();
+        if (_form?.IsValid != true) return;
+
+        if (_editingUserId is not null)
+        {
+            var user = await UserManager.FindByIdAsync(_editingUserId);
+            if (user is null) return;
+
+            user.FullName = _fullName;
+            user.EmployeeId = _employeeId;
+            user.Department = _department;
+            user.Position = _position;
+            user.IsActive = _isActive;
+
+            var updateResult = await UserManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                Snackbar.Add(updateResult.Errors.First().Description, Severity.Error);
+                return;
+            }
+
+            // Update role
+            var currentRoles = await UserManager.GetRolesAsync(user);
+            if (currentRoles.Any()) await UserManager.RemoveFromRolesAsync(user, currentRoles);
+            if (_selectedRole is not null) await UserManager.AddToRoleAsync(user, _selectedRole);
+
+            Snackbar.Add("User updated", Severity.Success);
+        }
+        else
+        {
+            var user = new ApplicationUser
+            {
+                UserName = _email,
+                Email = _email,
+                FullName = _fullName,
+                EmployeeId = _employeeId,
+                Department = _department,
+                Position = _position,
+                IsActive = _isActive,
+                EmailConfirmed = true
+            };
+
+            var createResult = await UserManager.CreateAsync(user, _password);
+            if (!createResult.Succeeded)
+            {
+                Snackbar.Add(createResult.Errors.First().Description, Severity.Error);
+                return;
+            }
+
+            if (_selectedRole is not null) await UserManager.AddToRoleAsync(user, _selectedRole);
+            Snackbar.Add("User created", Severity.Success);
+        }
+
+        CloseDialog();
+        await LoadUsers();
+    }
+}

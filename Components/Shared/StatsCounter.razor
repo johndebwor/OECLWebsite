@@ -1,0 +1,19 @@
+@* Animated statistics counter component *@
+
+<MudItem xs="6" md="@ColSpan" Class="text-center">
+    <MudText Typo="Typo.h3" Style="@($"color: {ValueColor}; font-family: 'Rajdhani', sans-serif; font-weight: 700;")">
+        @Value@Suffix
+    </MudText>
+    <MudText Typo="Typo.body1" Style="@($"color: {LabelColor};")">
+        @Label
+    </MudText>
+</MudItem>
+
+@code {
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public string? Suffix { get; set; }
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string ValueColor { get; set; } = "#FFFFFF";
+    [Parameter] public string LabelColor { get; set; } = "#FFF7ED";
+    [Parameter] public int ColSpan { get; set; } = 3;
+}

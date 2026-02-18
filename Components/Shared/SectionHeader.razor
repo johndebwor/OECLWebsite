@@ -1,0 +1,27 @@
+@* Reusable section header with title and subtitle *@
+
+<div class="@($"text-center mb-{MarginBottom}")">
+    <MudText Typo="Typo.h3" Color="Color.Primary"
+             Style="font-family: 'Rajdhani', sans-serif;" Class="mb-2">
+        @Title
+    </MudText>
+    @if (!string.IsNullOrEmpty(Subtitle))
+    {
+        <MudText Typo="Typo.body1" Color="Color.Secondary">
+            @Subtitle
+        </MudText>
+    }
+    @if (ShowDivider)
+    {
+        <div class="d-flex justify-center mt-3">
+            <div style="width: 60px; height: 3px; background-color: #F97316; border-radius: 2px;"></div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public bool ShowDivider { get; set; } = true;
+    [Parameter] public int MarginBottom { get; set; } = 8;
+}

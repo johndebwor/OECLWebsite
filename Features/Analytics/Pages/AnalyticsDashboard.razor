@@ -1,0 +1,211 @@
+@page "/admin/analytics"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireManagement")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+
+<PageTitle>Analytics — Admin</PageTitle>
+
+<div class="mb-6">
+    <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Analytics</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Website performance and engagement metrics</MudText>
+</div>
+
+<!-- Summary Cards -->
+<MudGrid Class="mb-6" Spacing="4">
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-primary">
+            <div class="d-flex justify-space-between align-center">
+                <div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Total Page Views</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">@_totalViews</MudText>
+                </div>
+                <div class="stat-icon stat-icon-primary">
+                    <MudIcon Icon="@Icons.Material.Filled.Visibility" />
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-success">
+            <div class="d-flex justify-space-between align-center">
+                <div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Views This Month</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Success" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">@_viewsThisMonth</MudText>
+                </div>
+                <div class="stat-icon stat-icon-success">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-warning">
+            <div class="d-flex justify-space-between align-center">
+                <div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Total Inquiries</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Warning" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">@_totalInquiries</MudText>
+                </div>
+                <div class="stat-icon stat-icon-warning">
+                    <MudIcon Icon="@Icons.Material.Filled.Mail" />
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-secondary">
+            <div class="d-flex justify-space-between align-center">
+                <div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">New Inquiries</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Info" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">@_newInquiries</MudText>
+                </div>
+                <div class="stat-icon stat-icon-info">
+                    <MudIcon Icon="@Icons.Material.Filled.FiberNew" />
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<!-- Top Pages & Recent Inquiries -->
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Rajdhani', sans-serif;">Top Pages</MudText>
+            <MudTable Items="@_topPages" Dense="true" Elevation="0" Hover="true">
+                <HeaderContent>
+                    <MudTh>Page</MudTh>
+                    <MudTh Style="width: 100px;">Views</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudText Typo="Typo.body2">@context.PageTitle</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.PageUrl</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">@context.Views</MudChip>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Color="Color.Secondary">No page view data yet.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Rajdhani', sans-serif;">Recent Inquiries</MudText>
+            <MudTable Items="@_recentInquiries" Dense="true" Elevation="0" Hover="true">
+                <HeaderContent>
+                    <MudTh>Contact</MudTh>
+                    <MudTh>Date</MudTh>
+                    <MudTh>Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudText Typo="Typo.body2">@context.ContactName</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(context.CompanyName ?? context.Email)</MudText>
+                    </MudTd>
+                    <MudTd>@context.InquiryDate.ToString("d")</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Color="Color.Secondary">No inquiries yet.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<!-- Daily Views Table -->
+<MudPaper Elevation="2" Class="pa-4 mt-6">
+    <MudText Typo="Typo.h6" Class="mb-3">Daily Views (Last 30 Days)</MudText>
+    <MudTable Items="@_dailyViews" Dense="true" Elevation="0" Hover="true">
+        <HeaderContent>
+            <MudTh>Date</MudTh>
+            <MudTh>Views</MudTh>
+            <MudTh>Unique Sessions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Date.ToString("MMM dd, yyyy")</MudTd>
+            <MudTd>@context.Views</MudTd>
+            <MudTd>@context.UniqueSessions</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Color="Color.Secondary">No view data for this period.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private record TopPageViewModel(string? PageUrl, string? PageTitle, int Views);
+    private record DailyViewModel(DateTime Date, int Views, int UniqueSessions);
+
+    private int _totalViews;
+    private int _viewsThisMonth;
+    private int _totalInquiries;
+    private int _newInquiries;
+    private List<TopPageViewModel> _topPages = [];
+    private List<ServiceInquiry> _recentInquiries = [];
+    private List<DailyViewModel> _dailyViews = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var thirtyDaysAgo = now.AddDays(-30);
+
+        // Summary counts
+        _totalViews = await context.PageViews.CountAsync();
+        _viewsThisMonth = await context.PageViews.CountAsync(v => v.ViewDate >= monthStart);
+        _totalInquiries = await context.ServiceInquiries.CountAsync();
+        _newInquiries = await context.ServiceInquiries.CountAsync(i => i.Status == InquiryStatus.New);
+
+        // Top pages (client-side grouping - PageViews table is typically small)
+        _topPages = (await context.PageViews
+            .Select(v => new { v.PageUrl, v.PageTitle })
+            .ToListAsync())
+            .GroupBy(v => new { v.PageUrl, v.PageTitle })
+            .Select(g => new TopPageViewModel(g.Key.PageUrl, g.Key.PageTitle ?? g.Key.PageUrl, g.Count()))
+            .OrderByDescending(p => p.Views)
+            .Take(10)
+            .ToList();
+
+        // Recent inquiries
+        _recentInquiries = await context.ServiceInquiries
+            .OrderByDescending(i => i.InquiryDate)
+            .Take(10)
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Daily views (last 30 days - client-side grouping)
+        _dailyViews = (await context.PageViews
+            .Where(v => v.ViewDate >= thirtyDaysAgo)
+            .Select(v => new { v.ViewDate, v.SessionId })
+            .ToListAsync())
+            .GroupBy(v => v.ViewDate.Date)
+            .Select(g => new DailyViewModel(
+                g.Key,
+                g.Count(),
+                g.Select(v => v.SessionId).Distinct().Count()))
+            .OrderByDescending(d => d.Date)
+            .ToList();
+    }
+
+    private static Color GetStatusColor(InquiryStatus status) => status switch
+    {
+        InquiryStatus.New => Color.Info,
+        InquiryStatus.InProgress => Color.Warning,
+        InquiryStatus.Responded => Color.Success,
+        InquiryStatus.Closed => Color.Default,
+        _ => Color.Default
+    };
+}

@@ -1,0 +1,133 @@
+@page "/admin/projects"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Manage Projects — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Projects</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Track and manage engineering projects</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               Href="/admin/projects/new"
+               Style="text-transform: none;">
+        Add Project
+    </MudButton>
+</div>
+
+<MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search projects..."
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true" Variant="Variant.Outlined" Class="mb-4" />
+
+    <MudTable Items="@FilteredProjects" Hover="true" Dense="true" Elevation="0"
+              Loading="@_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Project Name</MudTh>
+            <MudTh>Client</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Approval</MudTh>
+            <MudTh Style="width: 120px;">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.ProjectName</MudTd>
+            <MudTd DataLabel="Client">@context.Client</MudTd>
+            <MudTd DataLabel="Type">@context.ProjectType</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Color="@GetProjectStatusColor(context.Status)">
+                    @context.Status
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Approval">
+                <MudChip T="string" Size="Size.Small" Color="@GetApprovalColor(context.ApprovalStatus)">
+                    @context.ApprovalStatus
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               Href="@($"/admin/projects/edit/{context.Id}")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                               Color="Color.Error" OnClick="@(() => DeleteProject(context))" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No projects found.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<Project> _projects = [];
+    private bool _loading = true;
+    private string _searchString = "";
+
+    private IEnumerable<Project> FilteredProjects => string.IsNullOrEmpty(_searchString)
+        ? _projects
+        : _projects.Where(p =>
+            p.ProjectName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+            (p.Client?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    protected override async Task OnInitializedAsync() => await LoadProjects();
+
+    private async Task LoadProjects()
+    {
+        _loading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            _projects = await context.Projects
+                .OrderByDescending(p => p.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task DeleteProject(Project project)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Delete Project",
+            $"Are you sure you want to delete \"{project.ProjectName}\"?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var entity = await context.Projects.FindAsync(project.Id);
+            if (entity is not null)
+            {
+                context.Projects.Remove(entity);
+                await context.SaveChangesAsync();
+                Snackbar.Add("Project deleted", Severity.Success);
+                await LoadProjects();
+            }
+        }
+    }
+
+    private static Color GetProjectStatusColor(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Completed => Color.Success,
+        ProjectStatus.Ongoing => Color.Info,
+        ProjectStatus.Planned => Color.Warning,
+        _ => Color.Default
+    };
+
+    private static Color GetApprovalColor(ApprovalStatus status) => status switch
+    {
+        ApprovalStatus.Approved => Color.Success,
+        ApprovalStatus.PendingApproval => Color.Warning,
+        ApprovalStatus.Rejected => Color.Error,
+        _ => Color.Default
+    };
+}
