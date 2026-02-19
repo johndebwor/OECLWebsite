@@ -22,7 +22,7 @@
 
 <!-- Stat Cards -->
 <MudGrid Class="mb-6" Spacing="4">
-    <MudItem xs="12" sm="6" md="3">
+    <MudItem xs="12" sm="6" md="4">
         <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-primary">
             <div class="d-flex justify-space-between align-center">
                 <div>
@@ -35,7 +35,7 @@
             </div>
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" sm="6" md="3">
+    <MudItem xs="12" sm="6" md="4">
         <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-info">
             <div class="d-flex justify-space-between align-center">
                 <div>
@@ -48,7 +48,7 @@
             </div>
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" sm="6" md="3">
+    <MudItem xs="12" sm="6" md="4">
         <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-warning">
             <div class="d-flex justify-space-between align-center">
                 <div>
@@ -61,7 +61,7 @@
             </div>
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" sm="6" md="3">
+    <MudItem xs="12" sm="6" md="4">
         <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-success">
             <div class="d-flex justify-space-between align-center">
                 <div>
@@ -70,6 +70,19 @@
                 </div>
                 <div class="stat-icon stat-icon-success">
                     <MudIcon Icon="@Icons.Material.Filled.Mail" />
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-secondary">
+            <div class="d-flex justify-space-between align-center">
+                <div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Gallery Images</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Secondary" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">@_galleryImages</MudText>
+                </div>
+                <div class="stat-icon stat-icon-secondary">
+                    <MudIcon Icon="@Icons.Material.Filled.Collections" />
                 </div>
             </div>
         </MudPaper>
@@ -138,6 +151,7 @@
     private int _totalProjects;
     private int _pendingApprovals;
     private int _newInquiries;
+    private int _galleryImages;
 
     protected override async Task OnInitializedAsync()
     {
@@ -149,5 +163,6 @@
         _pendingApprovals = await context.Services.CountAsync(s => s.ApprovalStatus == ApprovalStatus.PendingApproval)
             + await context.Projects.CountAsync(p => p.ApprovalStatus == ApprovalStatus.PendingApproval);
         _newInquiries = await context.ServiceInquiries.CountAsync(i => i.Status == InquiryStatus.New);
+        _galleryImages = await context.GalleryImages.CountAsync(g => g.IsActive);
     }
 }

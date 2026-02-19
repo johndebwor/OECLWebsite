@@ -107,6 +107,9 @@ builder.Services.AddMemoryCache();
 // File Upload
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
+// Email Service
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+
 // Blazor
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

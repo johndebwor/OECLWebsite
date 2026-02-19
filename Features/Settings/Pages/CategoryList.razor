@@ -1,0 +1,214 @@
+@page "/admin/categories"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
+
+<PageTitle>Service Categories — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Service Categories</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage categories used when creating services</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenCreateDialog"
+               Style="text-transform: none;">
+        Add Category
+    </MudButton>
+</div>
+
+@if (_loading)
+{
+    <div class="d-flex justify-center pa-12">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+    </div>
+}
+else
+{
+    <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+        <MudTable Items="@_categories" Hover="true" Dense="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>Order</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Description</MudTh>
+                <MudTh>Services</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh Style="width: 120px;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order">@context.DisplayOrder</MudTd>
+                <MudTd DataLabel="Name">
+                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@context.Name</MudText>
+                </MudTd>
+                <MudTd DataLabel="Description">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary"
+                             Style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @(context.Description ?? "—")
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Services">@context.Services.Count</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(context.IsActive ? Color.Success : Color.Default)"
+                             Variant="Variant.Outlined">
+                        @(context.IsActive ? "Active" : "Inactive")
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                   OnClick="@(() => OpenEditDialog(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeleteCategory(context))"
+                                   Disabled="@(context.Services.Count > 0)" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>No categories found.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+}
+
+<!-- Create / Edit Dialog -->
+<MudDialog @bind-Visible="_dialogVisible"
+           Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingId > 0 ? "Edit Category" : "Add Category")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValid">
+            <MudTextField @bind-Value="_name" Label="Category Name" Required="true"
+                          RequiredError="Name is required" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_description" Label="Description" Lines="3"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="_displayOrder" Label="Display Order"
+                             Variant="Variant.Outlined" Class="mb-3" Min="0" />
+            <MudSwitch @bind-Value="_isActive" Label="Active" Color="Color.Success" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="SaveCategory" Disabled="@_saving">
+            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ServiceCategory> _categories = [];
+    private bool _loading = true;
+    private bool _dialogVisible;
+    private bool _saving;
+    private MudForm? _form;
+    private bool _formValid;
+
+    // Form fields
+    private int _editingId;
+    private string _name = "";
+    private string? _description;
+    private int _displayOrder;
+    private bool _isActive = true;
+
+    protected override async Task OnInitializedAsync() => await LoadCategories();
+
+    private async Task LoadCategories()
+    {
+        _loading = true;
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        _categories = await context.ServiceCategories
+            .Include(c => c.Services)
+            .OrderBy(c => c.DisplayOrder)
+            .ToListAsync();
+        _loading = false;
+    }
+
+    private void OpenCreateDialog()
+    {
+        _editingId = 0;
+        _name = "";
+        _description = null;
+        _displayOrder = (_categories.Any() ? _categories.Max(c => c.DisplayOrder) + 1 : 1);
+        _isActive = true;
+        _dialogVisible = true;
+    }
+
+    private void OpenEditDialog(ServiceCategory cat)
+    {
+        _editingId = cat.Id;
+        _name = cat.Name;
+        _description = cat.Description;
+        _displayOrder = cat.DisplayOrder;
+        _isActive = cat.IsActive;
+        _dialogVisible = true;
+    }
+
+    private void CloseDialog() => _dialogVisible = false;
+
+    private async Task SaveCategory()
+    {
+        if (_form is not null) await _form.Validate();
+        if (!_formValid) return;
+
+        _saving = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            if (_editingId > 0)
+            {
+                var cat = await context.ServiceCategories.FindAsync(_editingId);
+                if (cat is null) return;
+                cat.Name = _name;
+                cat.Description = _description;
+                cat.DisplayOrder = _displayOrder;
+                cat.IsActive = _isActive;
+                await context.SaveChangesAsync();
+                Snackbar.Add("Category updated.", Severity.Success);
+            }
+            else
+            {
+                context.ServiceCategories.Add(new ServiceCategory
+                {
+                    Name = _name,
+                    Description = _description,
+                    DisplayOrder = _displayOrder,
+                    IsActive = _isActive
+                });
+                await context.SaveChangesAsync();
+                Snackbar.Add("Category created.", Severity.Success);
+            }
+
+            CloseDialog();
+            await LoadCategories();
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task DeleteCategory(ServiceCategory cat)
+    {
+        if (cat.Services.Count > 0)
+        {
+            Snackbar.Add("Cannot delete a category that has services assigned to it.", Severity.Warning);
+            return;
+        }
+
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var entity = await context.ServiceCategories.FindAsync(cat.Id);
+        if (entity is null) return;
+        context.ServiceCategories.Remove(entity);
+        await context.SaveChangesAsync();
+        Snackbar.Add("Category deleted.", Severity.Success);
+        await LoadCategories();
+    }
+}

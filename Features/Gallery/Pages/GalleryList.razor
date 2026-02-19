@@ -1,0 +1,265 @@
+@page "/admin/gallery"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
+
+<PageTitle>Gallery — Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Gallery</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage gallery photos shown on the public gallery page</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenCreateDialog"
+               Style="text-transform: none;">
+        Add Photo
+    </MudButton>
+</div>
+
+@if (_loading)
+{
+    <div class="d-flex justify-center pa-12">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+    </div>
+}
+else if (!_images.Any())
+{
+    <MudPaper Elevation="0" Class="pa-16 text-center" Style="border: 2px dashed #E2E8F0; border-radius: 12px;">
+        <MudIcon Icon="@Icons.Material.Filled.PhotoLibrary" Size="Size.Large" Color="Color.Secondary" Class="mb-4" />
+        <MudText Typo="Typo.h6" Color="Color.Secondary">No gallery photos yet</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">Click "Add Photo" to upload the first image.</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="4">
+        @foreach (var image in _images)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2" Class="h-100" Style="border-radius: 12px;">
+                    @if (!string.IsNullOrEmpty(image.ImageUrl))
+                    {
+                        <MudCardMedia Image="@image.ImageUrl" Height="180" />
+                    }
+                    else
+                    {
+                        <div style="height: 180px; background: linear-gradient(135deg, #E2E8F0, #F1F5F9); display: flex; align-items: center; justify-content: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Large" Style="color: #94A3B8;" />
+                        </div>
+                    }
+                    <MudCardContent Class="pa-4">
+                        @if (!string.IsNullOrEmpty(image.Category))
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                     Color="Color.Secondary" Class="mb-2">
+                                @image.Category
+                            </MudChip>
+                        }
+                        <MudText Typo="Typo.subtitle1" Style="font-family: 'Rajdhani', sans-serif; font-weight: 600;">
+                            @image.Title
+                        </MudText>
+                        @if (!string.IsNullOrEmpty(image.Description))
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1"
+                                     Style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                @image.Description
+                            </MudText>
+                        }
+                        <div class="d-flex align-center gap-2 mt-2">
+                            <MudIcon Icon="@(image.IsActive ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                                     Color="@(image.IsActive ? Color.Success : Color.Default)" Size="Size.Small" />
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @(image.IsActive ? "Active" : "Inactive") · Order: @image.DisplayOrder
+                            </MudText>
+                        </div>
+                    </MudCardContent>
+                    <MudCardActions Class="pa-4 pt-0">
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Edit"
+                                   OnClick="@(() => OpenEditDialog(image))"
+                                   Style="text-transform: none;">
+                            Edit
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   OnClick="@(() => DeleteImage(image))"
+                                   Style="text-transform: none;">
+                            Delete
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+<!-- Create / Edit Dialog -->
+<MudDialog @bind-Visible="_dialogVisible"
+           Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingId.HasValue ? "Edit Photo" : "Add Photo")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_title" Label="Title" Required="true"
+                          RequiredError="Title is required"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_category" Label="Category"
+                          HelperText="e.g. Field Operations, Facilities, Team, Equipment"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_description" Label="Description"
+                          Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+            <MudTextField @bind-Value="_altText" Label="Alt Text"
+                          HelperText="Accessible description for screen readers"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="_displayOrder" Label="Display Order"
+                             Variant="Variant.Outlined" Min="0" Class="mb-3" />
+            <MudSwitch @bind-Value="_isActive" Label="Active" Color="Color.Success" Class="mb-4" />
+            <ImageUpload @bind-CurrentImageUrl="_imageUrl"
+                         Label="Photo"
+                         ButtonText="Upload Photo"
+                         Subfolder="gallery" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="SaveImage"
+                   Disabled="_saving">
+            @(_saving ? "Saving..." : "Save")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<GalleryImage> _images = [];
+    private bool _loading = true;
+    private bool _dialogVisible;
+    private bool _saving;
+    private MudForm? _form;
+
+    private int? _editingId;
+    private string _title = "";
+    private string _category = "";
+    private string _description = "";
+    private string _altText = "";
+    private string? _imageUrl;
+    private int _displayOrder;
+    private bool _isActive = true;
+
+    protected override async Task OnInitializedAsync() => await LoadImages();
+
+    private async Task LoadImages()
+    {
+        _loading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            _images = await context.GalleryImages
+                .OrderBy(g => g.DisplayOrder)
+                .ThenBy(g => g.Title)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally { _loading = false; }
+    }
+
+    private void OpenCreateDialog()
+    {
+        _editingId = null;
+        _title = "";
+        _category = "";
+        _description = "";
+        _altText = "";
+        _imageUrl = null;
+        _displayOrder = 0;
+        _isActive = true;
+        _dialogVisible = true;
+    }
+
+    private void OpenEditDialog(GalleryImage image)
+    {
+        _editingId = image.Id;
+        _title = image.Title;
+        _category = image.Category ?? "";
+        _description = image.Description ?? "";
+        _altText = image.AltText ?? "";
+        _imageUrl = image.ImageUrl;
+        _displayOrder = image.DisplayOrder;
+        _isActive = image.IsActive;
+        _dialogVisible = true;
+    }
+
+    private void CloseDialog() => _dialogVisible = false;
+
+    private async Task SaveImage()
+    {
+        if (_form is not null) await _form.Validate();
+        if (_form?.IsValid != true) return;
+
+        _saving = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            if (_editingId.HasValue)
+            {
+                var entity = await context.GalleryImages.FindAsync(_editingId.Value);
+                if (entity is null) return;
+                entity.Title = _title;
+                entity.Category = string.IsNullOrWhiteSpace(_category) ? null : _category.Trim();
+                entity.Description = string.IsNullOrWhiteSpace(_description) ? null : _description;
+                entity.AltText = string.IsNullOrWhiteSpace(_altText) ? null : _altText;
+                entity.ImageUrl = _imageUrl;
+                entity.DisplayOrder = _displayOrder;
+                entity.IsActive = _isActive;
+                entity.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                context.GalleryImages.Add(new GalleryImage
+                {
+                    Title = _title,
+                    Category = string.IsNullOrWhiteSpace(_category) ? null : _category.Trim(),
+                    Description = string.IsNullOrWhiteSpace(_description) ? null : _description,
+                    AltText = string.IsNullOrWhiteSpace(_altText) ? null : _altText,
+                    ImageUrl = _imageUrl,
+                    DisplayOrder = _displayOrder,
+                    IsActive = _isActive,
+                });
+            }
+
+            await context.SaveChangesAsync();
+            Snackbar.Add(_editingId.HasValue ? "Photo updated" : "Photo added", Severity.Success);
+            CloseDialog();
+            await LoadImages();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task DeleteImage(GalleryImage image)
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var entity = await context.GalleryImages.FindAsync(image.Id);
+        if (entity is not null)
+        {
+            context.GalleryImages.Remove(entity);
+            await context.SaveChangesAsync();
+            Snackbar.Add("Photo deleted", Severity.Success);
+            await LoadImages();
+        }
+    }
+}

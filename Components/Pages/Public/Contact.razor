@@ -3,6 +3,8 @@
 @using OECLWebsite.Data.Entities
 @using Microsoft.EntityFrameworkCore
 @inject IServiceProvider ServiceProvider
+@using OECLWebsite.Infrastructure.Services
+@inject IEmailService EmailService
 
 <PageTitle>Contact Us — Oval Engineering Company Limited</PageTitle>
 
@@ -25,7 +27,7 @@
     <MudGrid Spacing="6">
         <!-- Contact Form -->
         <MudItem xs="12" md="7">
-            <ContactForm Title="Send Us a Message" ShowServiceSelector="true" OnSubmit="HandleContactSubmit" />
+            <ContactForm Title="Send Us a Message" OnSubmit="HandleContactSubmit" />
         </MudItem>
 
         <!-- Contact Info -->
@@ -106,7 +108,7 @@
     <iframe
         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.8!2d36.763036027463706!3d-1.2683244453893678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMcKwMTYnMDYuMCJTIDM2wrA0NSc0Ni45IkU!5e0!3m2!1sen!4v1"
         width="100%"
-        height="600"
+        height="380"
         style="border:0; display:block;"
         allowfullscreen=""
         loading="lazy"
@@ -159,5 +161,17 @@
 
         context.ServiceInquiries.Add(inquiry);
         await context.SaveChangesAsync();
+
+        // Send email notification (fire-and-forget style; failure does not affect the user)
+        try
+        {
+            await EmailService.SendContactInquiryAsync(
+                model.ContactName, model.Email, model.CompanyName,
+                model.Phone, model.ServiceInterest, model.Message);
+        }
+        catch (Exception)
+        {
+            // Logged inside SmtpEmailService; inquiry is already saved so we don't surface the error
+        }
     }
 }

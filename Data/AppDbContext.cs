@@ -22,6 +22,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<PageView> PageViews => Set<PageView>();
     public DbSet<ServiceInquiry> ServiceInquiries => Set<ServiceInquiry>();
     public DbSet<SitePhoto> SitePhotos => Set<SitePhoto>();
+    public DbSet<GalleryImage> GalleryImages => Set<GalleryImage>();
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,5 +39,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
         modelBuilder.Entity<Announcement>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<ServiceInquiry>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<SitePhoto>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<GalleryImage>().HasQueryFilter(e => !e.IsDeleted);
     }
 }

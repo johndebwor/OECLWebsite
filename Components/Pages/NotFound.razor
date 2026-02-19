@@ -1,5 +1,81 @@
-﻿@page "/not-found"
+@page "/not-found"
 @layout MainLayout
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>Page Not Found — Oval Engineering Company Limited</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="d-flex flex-column align-center justify-center text-center"
+             Style="min-height: 60vh; padding-top: 5rem; padding-bottom: 5rem;">
+
+    <MudText Typo="Typo.h1"
+             Style="font-size: clamp(6rem, 15vw, 10rem); font-family: 'Rajdhani', sans-serif; font-weight: 700; color: #F97316; line-height: 1; margin-bottom: 0;">
+        404
+    </MudText>
+
+    <MudText Typo="Typo.h4" Color="Color.Primary"
+             Style="font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 0.5rem;">
+        Page Not Found
+    </MudText>
+
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-3 mb-6"
+             Style="max-width: 480px; line-height: 1.8;">
+        The page you are looking for doesn't exist or may have been moved.
+        Let's get you back on track.
+    </MudText>
+
+    <div class="d-flex gap-4 flex-wrap justify-center mb-8">
+        <MudButton Href="/"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Home"
+                   Style="text-transform: none; font-weight: 600; padding: 10px 28px;">
+            Back to Home
+        </MudButton>
+        <MudButton Href="/contact"
+                   Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.ContactMail"
+                   Style="text-transform: none; font-weight: 600; padding: 10px 28px;">
+            Contact Us
+        </MudButton>
+    </div>
+
+    <MudDivider Style="width: 100%; max-width: 400px; margin-bottom: 2rem;" />
+
+    <MudText Typo="Typo.overline" Color="Color.Secondary" Class="mb-3">
+        You might be looking for
+    </MudText>
+
+    <div class="d-flex gap-3 flex-wrap justify-center">
+        <MudButton Href="/services"
+                   Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Engineering"
+                   Style="text-transform: none;">
+            Services
+        </MudButton>
+        <MudButton Href="/projects"
+                   Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Business"
+                   Style="text-transform: none;">
+            Projects
+        </MudButton>
+        <MudButton Href="/gallery"
+                   Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PhotoLibrary"
+                   Style="text-transform: none;">
+            Gallery
+        </MudButton>
+        <MudButton Href="/about"
+                   Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Info"
+                   Style="text-transform: none;">
+            About Us
+        </MudButton>
+    </div>
+
+</MudContainer>

@@ -30,12 +30,19 @@
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
-                <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit"
-                         AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <MudMenuItem Icon="@Icons.Material.Filled.Home" Href="/">Back to Site</MudMenuItem>
-                    <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.Logout" Href="/auth/logout">Sign Out</MudMenuItem>
-                </MudMenu>
+                <MudText Typo="Typo.body2" Color="Color.Inherit" Class="mr-3 d-none d-sm-flex">
+                    @context.User.Identity?.Name
+                </MudText>
+                <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.OpenInNew"
+                           Style="text-transform: none;" Class="mr-1">
+                    Site
+                </MudButton>
+                <MudButton Href="/auth/logout" Variant="Variant.Outlined" Color="Color.Inherit" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Logout"
+                           Style="text-transform: none; border-color: rgba(255,255,255,0.3);">
+                    Sign Out
+                </MudButton>
             </Authorized>
         </AuthorizeView>
     </MudAppBar>

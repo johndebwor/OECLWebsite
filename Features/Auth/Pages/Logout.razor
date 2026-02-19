@@ -1,5 +1,6 @@
 @page "/auth/logout"
 @layout MainLayout
+@inject NavigationManager NavigationManager
 
 <PageTitle>Signing Out — Oval Engineering</PageTitle>
 
@@ -16,3 +17,10 @@
         </MudButton>
     </MudPaper>
 </MudContainer>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/api/auth/logout", forceLoad: true);
+    }
+}

@@ -47,3 +47,12 @@ Desktop.ini
 
 ## Temp
 temp_build/
+
+## Publish output
+publish/
+
+## Database backups
+backups/
+
+## Claude Code
+.claude/

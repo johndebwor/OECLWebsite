@@ -1,12 +1,21 @@
 <MudNavMenu Bordered="true" Color="Color.Secondary">
     <MudNavLink Href="/admin/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
     <MudNavLink Href="/admin/services" Icon="@Icons.Material.Filled.Engineering">Services</MudNavLink>
+    <MudNavLink Href="/admin/categories" Icon="@Icons.Material.Filled.Category">Service Categories</MudNavLink>
     <MudNavLink Href="/admin/projects" Icon="@Icons.Material.Filled.Business">Projects</MudNavLink>
+    <MudNavLink Href="/admin/project-types" Icon="@Icons.Material.Filled.Label">Project Types</MudNavLink>
     <MudNavLink Href="/admin/content" Icon="@Icons.Material.Filled.Article">Content</MudNavLink>
     <MudNavLink Href="/admin/announcements" Icon="@Icons.Material.Filled.Campaign">Announcements</MudNavLink>
     <MudNavLink Href="/admin/approvals" Icon="@Icons.Material.Filled.CheckCircle">Approvals</MudNavLink>
     <MudNavLink Href="/admin/inquiries" Icon="@Icons.Material.Filled.Email">Inquiries</MudNavLink>
     <MudNavLink Href="/admin/site-photos" Icon="@Icons.Material.Filled.PhotoLibrary">Site Photos</MudNavLink>
+    <MudNavLink Href="/admin/gallery" Icon="@Icons.Material.Filled.Collections">Gallery</MudNavLink>
+
+    <AuthorizeView Policy="RequireManagement">
+        <Authorized>
+            <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
 
     <AuthorizeView Policy="RequireDepartmentHead">
         <Authorized>

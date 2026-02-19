@@ -67,7 +67,7 @@
         <MudText Typo="Typo.h6">@(_editingUserId is not null ? "Edit User" : "Add User")</MudText>
     </TitleContent>
     <DialogContent>
-        <MudForm @ref="_form">
+        <MudForm @ref="_form" @bind-IsValid="_formValid">
             <MudTextField @bind-Value="_fullName" Label="Full Name" Required="true"
                           RequiredError="Full name is required" Variant="Variant.Outlined" Class="mb-3" />
             <MudTextField @bind-Value="_email" Label="Email" Required="true" InputType="InputType.Email"
@@ -109,6 +109,7 @@
     private string _searchString = "";
     private bool _dialogVisible;
     private MudForm? _form;
+    private bool _formValid;
 
     // Form fields
     private string? _editingUserId;
@@ -184,7 +185,7 @@
     private async Task SaveUser()
     {
         if (_form is not null) await _form.Validate();
-        if (_form?.IsValid != true) return;
+        if (!_formValid) return;
 
         if (_editingUserId is not null)
         {

@@ -1,0 +1,198 @@
+@page "/gallery"
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using Microsoft.EntityFrameworkCore
+@inject IServiceProvider ServiceProvider
+@inject IDialogService DialogService
+
+<PageTitle>Photo Gallery — Oval Engineering Company Limited</PageTitle>
+
+<!-- Hero -->
+<MudPaper Class="hero-page pa-12" Square="true" Elevation="0">
+    <MudContainer MaxWidth="MaxWidth.Large" Style="position: relative; z-index: 1;">
+        <MudText Typo="Typo.overline" Style="color: #F97316; letter-spacing: 2px;">OUR GALLERY</MudText>
+        <MudText Typo="Typo.h3" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif; font-weight: 700;">
+            Photo Gallery
+        </MudText>
+        <MudText Typo="Typo.body1" Style="color: #94A3B8;" Class="mt-2">
+            A look at our field operations, facilities, and team at work
+        </MudText>
+    </MudContainer>
+</MudPaper>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-12">
+    @if (_loading)
+    {
+        <div class="d-flex justify-center pa-12">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+        </div>
+    }
+    else if (!_allImages.Any())
+    {
+        <MudPaper Elevation="0" Class="pa-16 text-center" Style="border: 2px dashed #E2E8F0; border-radius: 12px;">
+            <MudIcon Icon="@Icons.Material.Filled.PhotoLibrary" Size="Size.Large" Color="Color.Secondary" Class="mb-4" />
+            <MudText Typo="Typo.h6" Color="Color.Secondary">No photos yet</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                Gallery images will appear here once they are added.
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <!-- Category filter chips -->
+        @if (_categories.Count > 0)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-8">
+                <MudChip T="string"
+                         Color="@(_selectedCategory == null ? Color.Primary : Color.Default)"
+                         Variant="@(_selectedCategory == null ? Variant.Filled : Variant.Outlined)"
+                         OnClick="@(() => SelectCategory(null))"
+                         Style="cursor: pointer;">
+                    All
+                </MudChip>
+                @foreach (var cat in _categories)
+                {
+                    <MudChip T="string"
+                             Color="@(_selectedCategory == cat ? Color.Primary : Color.Default)"
+                             Variant="@(_selectedCategory == cat ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => SelectCategory(cat))"
+                             Style="cursor: pointer;">
+                        @cat
+                    </MudChip>
+                }
+            </div>
+        }
+
+        <!-- Image grid -->
+        <MudGrid Spacing="4">
+            @foreach (var image in FilteredImages)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="2" Class="h-100 card-hover" Style="border-radius: 12px; cursor: pointer;"
+                             @onclick="@(() => OpenLightbox(image))">
+                        @if (!string.IsNullOrEmpty(image.ImageUrl))
+                        {
+                            <MudCardMedia Image="@image.ImageUrl" Height="220" />
+                        }
+                        else
+                        {
+                            <div style="height: 220px; background: linear-gradient(135deg, #E2E8F0, #F1F5F9); display: flex; align-items: center; justify-content: center;">
+                                <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Large" Style="color: #94A3B8;" />
+                            </div>
+                        }
+                        <MudCardContent Class="pa-4">
+                            @if (!string.IsNullOrEmpty(image.Category))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
+                                         Variant="Variant.Outlined" Class="mb-2"
+                                         Style="color: #F97316; border-color: #F97316;">
+                                    @image.Category
+                                </MudChip>
+                            }
+                            <MudText Typo="Typo.subtitle1"
+                                     Style="font-family: 'Rajdhani', sans-serif; font-weight: 600; line-height: 1.3;">
+                                @image.Title
+                            </MudText>
+                            @if (!string.IsNullOrEmpty(image.Description))
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1"
+                                         Style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    @image.Description
+                                </MudText>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+<!-- Lightbox Dialog -->
+<MudDialog @bind-Visible="_lightboxVisible"
+           Options="@(new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, BackdropClick = true })">
+    <TitleContent>
+        <div class="d-flex align-center justify-space-between" style="width: 100%;">
+            <MudText Typo="Typo.h6" Style="font-family: 'Rajdhani', sans-serif;">
+                @_lightboxImage?.Title
+            </MudText>
+            @if (!string.IsNullOrEmpty(_lightboxImage?.Category))
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                         Style="color: #F97316; border-color: #F97316;">
+                    @_lightboxImage.Category
+                </MudChip>
+            }
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (_lightboxImage is not null && !string.IsNullOrEmpty(_lightboxImage.ImageUrl))
+        {
+            <MudImage Src="@_lightboxImage.ImageUrl"
+                      Alt="@(_lightboxImage.AltText ?? _lightboxImage.Title)"
+                      ObjectFit="ObjectFit.Contain"
+                      Style="width: 100%; max-height: 65vh; border-radius: 8px;" />
+            @if (!string.IsNullOrEmpty(_lightboxImage.Description))
+            {
+                <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-4" Style="line-height: 1.7;">
+                    @_lightboxImage.Description
+                </MudText>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="@(() => _lightboxVisible = false)">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<GalleryImage> _allImages = [];
+    private List<string> _categories = [];
+    private string? _selectedCategory;
+    private bool _loading = true;
+    private bool _lightboxVisible;
+    private GalleryImage? _lightboxImage;
+
+    private IEnumerable<GalleryImage> FilteredImages =>
+        _selectedCategory == null
+            ? _allImages
+            : _allImages.Where(i => i.Category == _selectedCategory);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            _allImages = await context.GalleryImages
+                .Where(g => g.IsActive)
+                .OrderBy(g => g.DisplayOrder)
+                .ThenBy(g => g.Title)
+                .AsNoTracking()
+                .ToListAsync();
+
+            _categories = _allImages
+                .Where(g => !string.IsNullOrEmpty(g.Category))
+                .Select(g => g.Category!)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void SelectCategory(string? category)
+    {
+        _selectedCategory = category;
+    }
+
+    private void OpenLightbox(GalleryImage image)
+    {
+        _lightboxImage = image;
+        _lightboxVisible = true;
+    }
+}

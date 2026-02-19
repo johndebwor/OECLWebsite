@@ -7,11 +7,11 @@
 <PageTitle>Oval Engineering Company Limited — Oil & Gas Engineering Services</PageTitle>
 
 <!-- Hero Section -->
-<MudPaper Class="@(_heroUrl != null ? "hero-section-photo pa-16 mb-0" : "hero-section pa-16 mb-0")"
-          Style="@(_heroUrl != null ? $"min-height: 580px; background-image: url('{_heroUrl}');" : "min-height: 580px;")"
+<MudPaper Class="hero-home-photo pa-16 mb-0"
+          Style="@($"min-height: 600px; background-image: url('{_heroUrl}');")"
           Square="true" Elevation="0">
     <MudContainer MaxWidth="MaxWidth.Large" Class="hero-content">
-        <MudGrid Class="align-center" Style="min-height: 460px;">
+        <MudGrid Class="align-center" Style="min-height: 480px;">
             <MudItem xs="12" md="7">
                 @if (!string.IsNullOrEmpty(_logoUrl))
                 {
@@ -28,7 +28,7 @@
                 <MudText Typo="Typo.h1" Style="color: #F97316; font-family: 'Rajdhani', sans-serif; font-weight: 700; line-height: 1.1;">
                     in Oil & Gas
                 </MudText>
-                <MudText Typo="Typo.h6" Class="mt-4 mb-8" Style="color: #94A3B8; max-width: 560px; font-weight: 400; line-height: 1.7;">
+                <MudText Typo="Typo.h6" Class="mt-4 mb-8" Style="color: #CBD5E1; max-width: 520px; font-weight: 400; line-height: 1.7;">
                     Delivering precision engineering services across the full project lifecycle — from
                     front-end design through construction, commissioning, and operations.
                 </MudText>
@@ -40,31 +40,37 @@
                     </MudButton>
                     <MudButton Href="/contact" Variant="Variant.Outlined"
                                Size="Size.Large"
-                               Style="color: #F8FAFC; border-color: rgba(248,250,252,0.3); text-transform: none; font-weight: 600; padding: 12px 28px;">
+                               Style="color: #F8FAFC; border-color: rgba(248,250,252,0.35); text-transform: none; font-weight: 600; padding: 12px 28px;">
                         Get in Touch
                     </MudButton>
                 </div>
             </MudItem>
+            <!-- Glass-morphism stats panel -->
             <MudItem xs="12" md="5" Class="d-none d-md-flex justify-center align-center">
-                <MudPaper Elevation="0" Style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 2.5rem;">
+                <MudPaper Elevation="0" Style="background: rgba(10, 36, 99, 0.35); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 340px;">
                     <MudGrid>
                         <MudItem xs="6" Class="text-center pa-3">
                             <MudText Typo="Typo.h3" Style="color: #F97316; font-family: 'Rajdhani', sans-serif; font-weight: 700;">10+</MudText>
-                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Years Experience</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #CBD5E1; font-size: 0.8rem;">Years Experience</MudText>
                         </MudItem>
                         <MudItem xs="6" Class="text-center pa-3">
-                            <MudText Typo="Typo.h3" Style="color: #3E92CC; font-family: 'Rajdhani', sans-serif; font-weight: 700;">50+</MudText>
-                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Projects Delivered</MudText>
+                            <MudText Typo="Typo.h3" Style="color: #3E92CC; font-family: 'Rajdhani', sans-serif; font-weight: 700;">@ProjectStat</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #CBD5E1; font-size: 0.8rem;">Projects Delivered</MudText>
                         </MudItem>
                         <MudItem xs="6" Class="text-center pa-3">
                             <MudText Typo="Typo.h3" Style="color: #3E92CC; font-family: 'Rajdhani', sans-serif; font-weight: 700;">100+</MudText>
-                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Engineers & Staff</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #CBD5E1; font-size: 0.8rem;">Engineers & Staff</MudText>
                         </MudItem>
                         <MudItem xs="6" Class="text-center pa-3">
-                            <MudText Typo="Typo.h3" Style="color: #F97316; font-family: 'Rajdhani', sans-serif; font-weight: 700;">5</MudText>
-                            <MudText Typo="Typo.caption" Style="color: #94A3B8;">Core Services</MudText>
+                            <MudText Typo="Typo.h3" Style="color: #F97316; font-family: 'Rajdhani', sans-serif; font-weight: 700;">@CategoryStat</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #CBD5E1; font-size: 0.8rem;">Core Services</MudText>
                         </MudItem>
                     </MudGrid>
+                    <MudDivider Style="border-color: rgba(255,255,255,0.1); margin: 0.75rem 0;" />
+                    <div class="d-flex align-center gap-2 mt-1">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Style="color: #F97316; font-size: 1rem;" />
+                        <MudText Typo="Typo.caption" Style="color: #94A3B8;">Juba, South Sudan</MudText>
+                    </div>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -80,7 +86,7 @@
                 <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Years Experience</MudText>
             </MudItem>
             <MudItem xs="6" Class="text-center">
-                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">50+</MudText>
+                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">@ProjectStat</MudText>
                 <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Projects Delivered</MudText>
             </MudItem>
             <MudItem xs="6" Class="text-center">
@@ -88,7 +94,7 @@
                 <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Engineers & Staff</MudText>
             </MudItem>
             <MudItem xs="6" Class="text-center">
-                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">5</MudText>
+                <MudText Typo="Typo.h4" Style="color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700;">@CategoryStat</MudText>
                 <MudText Typo="Typo.caption" Style="color: #FFF7ED;">Core Services</MudText>
             </MudItem>
         </MudGrid>
@@ -140,6 +146,40 @@
         </MudItem>
     </MudGrid>
 </MudContainer>
+
+<!-- Facility Photo Strip -->
+<div class="facility-photo-strip">
+    <div class="strip-content">
+        <MudContainer MaxWidth="MaxWidth.Large">
+            <MudGrid Class="align-center" Spacing="6">
+                <MudItem xs="12" md="7">
+                    <MudText Typo="Typo.overline" Style="color: #F97316; letter-spacing: 3px;">IN THE FIELD</MudText>
+                    <MudText Typo="Typo.h3" Style="color: #F8FAFC; font-family: 'Rajdhani', sans-serif; font-weight: 700; line-height: 1.2;" Class="mt-1 mb-3">
+                        Crude Preheater Systems — Designed, Built & Maintained by Our Team
+                    </MudText>
+                    <MudText Typo="Typo.body1" Style="color: #CBD5E1; line-height: 1.8; max-width: 540px;">
+                        From complex heat exchanger trains to full facility turnarounds, Oval Engineering delivers
+                        precision craftsmanship and operational reliability on every project.
+                    </MudText>
+                </MudItem>
+                <MudItem xs="12" md="5" Class="d-flex flex-wrap gap-3">
+                    <MudChip T="string" Variant="Variant.Outlined" Style="color: #F97316; border-color: rgba(249,115,22,0.5);">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" Style="color: #F97316;" /> EPCC Delivery
+                    </MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Style="color: #3E92CC; border-color: rgba(62,146,204,0.5);">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" Style="color: #3E92CC;" /> HSE Compliant
+                    </MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Style="color: #F8FAFC; border-color: rgba(248,250,252,0.3);">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" Style="color: #F8FAFC;" /> ISO Standards
+                    </MudChip>
+                    <MudChip T="string" Variant="Variant.Outlined" Style="color: #F8FAFC; border-color: rgba(248,250,252,0.3);">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" Style="color: #F8FAFC;" /> Local Workforce
+                    </MudChip>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </div>
+</div>
 
 <!-- Services — Staggered Grid -->
 <MudPaper Class="section-alt py-16" Square="true" Elevation="0">
@@ -308,6 +348,8 @@
     private string? _ctaUrl;
     private string? _logoUrl;
     private string? _aboutUrl;
+    private int _projectCount;
+    private int _categoryCount;
 
     private record ServiceItem(string Icon, string Title, string Description, Color Color);
     private record CapabilityItem(string Icon, string Title, string Desc, string BorderColor);
@@ -322,11 +364,18 @@
             .Where(p => PhotoKeys.Contains(p.PhotoKey) && p.IsActive && !string.IsNullOrEmpty(p.ImageUrl))
             .AsNoTracking()
             .ToListAsync();
-        _heroUrl = photos.FirstOrDefault(p => p.PhotoKey == "hero-home")?.ImageUrl;
+        _heroUrl = photos.FirstOrDefault(p => p.PhotoKey == "hero-home")?.ImageUrl
+                   ?? "/images/hero-preheater.jpg";
         _ctaUrl = photos.FirstOrDefault(p => p.PhotoKey == "cta-background")?.ImageUrl;
         _logoUrl = photos.FirstOrDefault(p => p.PhotoKey == "company-logo")?.ImageUrl;
         _aboutUrl = photos.FirstOrDefault(p => p.PhotoKey == "about-team")?.ImageUrl;
+
+        _projectCount = await context.Projects.CountAsync();
+        _categoryCount = await context.ServiceCategories.CountAsync();
     }
+
+    private string ProjectStat => _projectCount > 0 ? $"{_projectCount}+" : "50+";
+    private string CategoryStat => _categoryCount > 0 ? _categoryCount.ToString() : "5";
 
     private readonly List<ServiceItem> _services =
     [

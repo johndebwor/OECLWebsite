@@ -33,11 +33,10 @@
             </MudItem>
             <MudItem xs="12" sm="4">
                 <MudSelect @bind-Value="_model.ProjectType" Label="Project Type" Variant="Variant.Outlined">
-                    <MudSelectItem T="string" Value="@("FEED")">FEED</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("EPCC")">EPCC</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("O&M")">O&M</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Consulting")">Consulting</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Project Management")">Project Management</MudSelectItem>
+                    @foreach (var pt in _projectTypes)
+                    {
+                        <MudSelectItem T="string" Value="@pt">@pt</MudSelectItem>
+                    }
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
@@ -177,13 +176,25 @@
     private DateTime? _completionDate;
     private List<GalleryImageModel> _galleryImages = [];
     private bool _galleryUploading;
+    private List<string> _projectTypes = ["FEED", "EPCC", "O&M", "Consulting", "Project Management"];
 
     protected override async Task OnInitializedAsync()
     {
-        if (!IsEdit) return;
-
         using var scope = ServiceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // Load project types from settings
+        var typesSetting = await context.SystemSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Key == "Projects:Types");
+        if (!string.IsNullOrWhiteSpace(typesSetting?.Value))
+        {
+            _projectTypes = typesSetting.Value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+        }
+
+        if (!IsEdit) return;
         var project = await context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == Id);
         if (project is not null)
         {

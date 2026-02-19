@@ -27,6 +27,8 @@ public static class DatabaseSeeder
             await SeedProjectsAsync(context);
             await SeedContentPagesAsync(context);
             await SeedSitePhotosAsync(context);
+            await SeedSystemSettingsAsync(context);
+            await SeedProjectTypesSettingAsync(context);
             logger.LogInformation("Database seeding completed successfully");
         }
         catch (Exception ex)
@@ -275,6 +277,38 @@ public static class DatabaseSeeder
         };
 
         context.SitePhotos.AddRange(photos);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedSystemSettingsAsync(AppDbContext context)
+    {
+        if (await context.SystemSettings.AnyAsync()) return;
+
+        context.SystemSettings.AddRange(
+            new SystemSetting { Key = "Projects:Types", Value = "FEED,EPCC,O&M,Consulting,Project Management", Description = "Comma-separated list of project type options", Category = "General" },
+            new SystemSetting { Key = "Email:To", Value = "info@oecl-ss.com", Description = "Primary recipient for contact form emails", Category = "Email" },
+            new SystemSetting { Key = "Email:Cc", Value = "", Description = "CC address for contact form emails (optional)", Category = "Email" },
+            new SystemSetting { Key = "Email:SmtpHost", Value = "", Description = "SMTP server hostname (e.g. smtp.gmail.com)", Category = "Email" },
+            new SystemSetting { Key = "Email:SmtpPort", Value = "587", Description = "SMTP port — 587 for STARTTLS, 465 for SSL", Category = "Email" },
+            new SystemSetting { Key = "Email:SmtpUsername", Value = "", Description = "SMTP login username / email", Category = "Email" },
+            new SystemSetting { Key = "Email:SmtpPassword", Value = "", Description = "SMTP login password", Category = "Email", IsSecret = true },
+            new SystemSetting { Key = "Email:FromAddress", Value = "noreply@oecl-ss.com", Description = "Sender email address shown to recipients", Category = "Email" },
+            new SystemSetting { Key = "Email:FromName", Value = "Oval Engineering Website", Description = "Sender display name shown to recipients", Category = "Email" },
+            new SystemSetting { Key = "Email:EnableSsl", Value = "true", Description = "Use STARTTLS/SSL for SMTP connection (true/false)", Category = "Email" }
+        );
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedProjectTypesSettingAsync(AppDbContext context)
+    {
+        if (await context.SystemSettings.AnyAsync(s => s.Key == "Projects:Types")) return;
+        context.SystemSettings.Add(new SystemSetting
+        {
+            Key = "Projects:Types",
+            Value = "FEED,EPCC,O&M,Consulting,Project Management",
+            Description = "Comma-separated list of project type options",
+            Category = "General"
+        });
         await context.SaveChangesAsync();
     }
 }
