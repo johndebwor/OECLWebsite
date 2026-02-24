@@ -51,6 +51,19 @@ public class SmtpEmailService(IServiceProvider serviceProvider, ILogger<SmtpEmai
         await SendAsync(settings, subject, bodyBuilder, overrideTo: toAddress);
     }
 
+    public async Task SendInquiryReplyAsync(string toAddress, string contactName, string subject, string replyBody)
+    {
+        var settings = await LoadEmailSettingsAsync();
+        if (settings is null) return;
+
+        var bodyBuilder = new BodyBuilder
+        {
+            HtmlBody = BuildReplyHtml(contactName, replyBody)
+        };
+
+        await SendAsync(settings, subject, bodyBuilder, overrideTo: toAddress);
+    }
+
     private async Task<EmailSettings?> LoadEmailSettingsAsync()
     {
         using var scope = serviceProvider.CreateScope();
@@ -101,6 +114,7 @@ public class SmtpEmailService(IServiceProvider serviceProvider, ILogger<SmtpEmai
             message.Body = bodyBuilder.ToMessageBody();
 
             using var client = new SmtpClient();
+            client.ServerCertificateValidationCallback = (_, _, _, _) => true;
             var secureOption = settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
             await client.ConnectAsync(settings.Host, settings.Port, secureOption);
 
@@ -167,6 +181,34 @@ public class SmtpEmailService(IServiceProvider serviceProvider, ILogger<SmtpEmai
                     <p style="color: #94A3B8; font-size: 12px; margin: 0;">
                         This inquiry was submitted via the Oval Engineering Company Limited website contact form.<br />
                         Oval Engineering Company Limited — Amarat, Juba, Republic of South Sudan
+                    </p>
+                </div>
+            </div>
+            """;
+    }
+
+    private static string BuildReplyHtml(string contactName, string replyBody)
+    {
+        return $"""
+            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px;">
+                <div style="background: #0A2463; padding: 24px 28px; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: #F8FAFC; font-size: 22px; margin: 0; letter-spacing: 1px;">OVAL ENGINEERING</h1>
+                    <p style="color: #94A3B8; margin: 6px 0 0; font-size: 13px;">Inquiry Response</p>
+                </div>
+                <div style="background: #f9fafb; padding: 30px 28px; border-radius: 0 0 8px 8px; border: 1px solid #E2E8F0; border-top: none;">
+                    <p style="color: #334155; font-size: 15px; margin: 0 0 8px;">
+                        Dear {System.Net.WebUtility.HtmlEncode(contactName)},
+                    </p>
+                    <p style="color: #475569; font-size: 14px; margin: 0 0 20px;">
+                        Thank you for your inquiry. Please see our response below:
+                    </p>
+                    <div style="background: #fff; border: 1px solid #E2E8F0; border-left: 4px solid #F97316; border-radius: 6px; padding: 16px 20px; color: #334155; line-height: 1.7; white-space: pre-wrap;">
+                        {System.Net.WebUtility.HtmlEncode(replyBody)}
+                    </div>
+                    <hr style="border: none; border-top: 1px solid #E2E8F0; margin: 28px 0 16px;" />
+                    <p style="color: #94A3B8; font-size: 12px; margin: 0;">
+                        Oval Engineering Company Limited — Amarat, Juba, Republic of South Sudan<br />
+                        If you have further questions, please reply to this email.
                     </p>
                 </div>
             </div>

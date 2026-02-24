@@ -5,6 +5,7 @@
 @using OECLWebsite.Data.Entities
 @using Microsoft.EntityFrameworkCore
 @inject IServiceProvider ServiceProvider
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
 <PageTitle>Gallery — Admin</PageTitle>
@@ -251,6 +252,13 @@ else
 
     private async Task DeleteImage(GalleryImage image)
     {
+        var result = await DialogService.ShowMessageBox(
+            "Delete Photo",
+            $"Are you sure you want to delete \"{image.Title}\"?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result != true) return;
+
         using var scope = ServiceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var entity = await context.GalleryImages.FindAsync(image.Id);

@@ -24,6 +24,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<SitePhoto> SitePhotos => Set<SitePhoto>();
     public DbSet<GalleryImage> GalleryImages => Set<GalleryImage>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<EquipmentCategory> EquipmentCategories => Set<EquipmentCategory>();
+    public DbSet<Equipment> Equipment => Set<Equipment>();
+    public DbSet<InquiryReply> InquiryReplies => Set<InquiryReply>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,5 +43,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
         modelBuilder.Entity<ServiceInquiry>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<SitePhoto>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<GalleryImage>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<EquipmentCategory>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<InquiryReply>().HasQueryFilter(e => !e.IsDeleted);
     }
 }

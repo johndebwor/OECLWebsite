@@ -48,6 +48,8 @@
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
                                OnClick="@(() => EditPage(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                               Color="Color.Error" OnClick="@(() => DeletePage(context))" />
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -158,6 +160,28 @@
         Snackbar.Add("Page saved", Severity.Success);
         _dialogVisible = false;
         await LoadPages();
+    }
+
+    private async Task DeletePage(ContentPage page)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Delete Page",
+            $"Are you sure you want to delete \"{page.PageTitle}\"?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var entity = await context.ContentPages.FindAsync(page.Id);
+            if (entity is not null)
+            {
+                context.ContentPages.Remove(entity);
+                await context.SaveChangesAsync();
+                Snackbar.Add("Page deleted", Severity.Success);
+                await LoadPages();
+            }
+        }
     }
 
     private class ContentPageModel

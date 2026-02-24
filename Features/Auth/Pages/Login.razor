@@ -25,6 +25,7 @@
         }
 
         <form method="post" action="/api/auth/login-form">
+            <AntiforgeryToken />
             <div class="mb-4">
                 <label class="mud-input-label" for="email">Email</label>
                 <input type="email" id="email" name="email" required

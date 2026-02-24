@@ -6,4 +6,6 @@ public interface IEmailService
         string? phone, string? serviceInterest, string message);
 
     Task SendTestEmailAsync(string toAddress);
+
+    Task SendInquiryReplyAsync(string toAddress, string contactName, string subject, string replyBody);
 }

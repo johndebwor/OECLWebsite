@@ -2,6 +2,7 @@ using System.Reflection;
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -65,12 +66,20 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddDefaultTokenProviders()
 .AddClaimsPrincipalFactory<AppUserClaimsPrincipalFactory>();
 
+// Forwarded Headers (for reverse proxy / SSL termination)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Cookie Authentication
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
     options.LoginPath = "/auth/login";
@@ -125,14 +134,19 @@ var app = builder.Build();
 await DatabaseSeeder.SeedAsync(app.Services);
 
 // Configure the HTTP request pipeline
-if (!app.Environment.IsDevelopment())
+app.UseForwardedHeaders();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
 app.UseSecurityHeaders();
 
 app.UseAuthentication();

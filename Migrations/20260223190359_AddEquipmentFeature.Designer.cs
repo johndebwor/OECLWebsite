@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OECLWebsite.Data;
 
@@ -11,9 +12,11 @@ using OECLWebsite.Data;
 namespace OECLWebsite.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260223190359_AddEquipmentFeature")]
+    partial class AddEquipmentFeature
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -541,73 +544,6 @@ namespace OECLWebsite.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("GalleryImages");
-                });
-
-            modelBuilder.Entity("OECLWebsite.Data.Entities.InquiryReply", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("EmailSentSuccessfully")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsInternalNote")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SentByName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("SentByUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("ServiceInquiryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServiceInquiryId");
-
-                    b.ToTable("InquiryReplies");
                 });
 
             modelBuilder.Entity("OECLWebsite.Data.Entities.PageView", b =>
@@ -1313,17 +1249,6 @@ namespace OECLWebsite.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("OECLWebsite.Data.Entities.InquiryReply", b =>
-                {
-                    b.HasOne("OECLWebsite.Data.Entities.ServiceInquiry", "ServiceInquiry")
-                        .WithMany("Replies")
-                        .HasForeignKey("ServiceInquiryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ServiceInquiry");
-                });
-
             modelBuilder.Entity("OECLWebsite.Data.Entities.ProjectImage", b =>
                 {
                     b.HasOne("OECLWebsite.Data.Entities.Project", "Project")
@@ -1374,11 +1299,6 @@ namespace OECLWebsite.Migrations
             modelBuilder.Entity("OECLWebsite.Data.Entities.ServiceCategory", b =>
                 {
                     b.Navigation("Services");
-                });
-
-            modelBuilder.Entity("OECLWebsite.Data.Entities.ServiceInquiry", b =>
-                {
-                    b.Navigation("Replies");
                 });
 #pragma warning restore 612, 618
         }

@@ -17,4 +17,5 @@ public class ServiceInquiry : BaseAuditableEntity
 
     // Navigation
     public Service? Service { get; set; }
+    public ICollection<InquiryReply> Replies { get; set; } = [];
 }

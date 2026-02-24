@@ -71,7 +71,7 @@
                           RequiredError="Title is required" Variant="Variant.Outlined" Class="mb-3" />
             <MudTextField @bind-Value="_content" Label="Content" Lines="4"
                           Variant="Variant.Outlined" Class="mb-3" />
-            <MudSelect @bind-Value="_priority" Label="Priority" Variant="Variant.Outlined" Class="mb-3">
+            <MudSelect T="AnnouncementPriority" @bind-Value="_priority" Label="Priority" Variant="Variant.Outlined" Class="mb-3">
                 @foreach (var p in Enum.GetValues<AnnouncementPriority>())
                 {
                     <MudSelectItem T="AnnouncementPriority" Value="@p">@p</MudSelectItem>
@@ -153,7 +153,7 @@
     private async Task SaveAnnouncement()
     {
         if (_form is not null) await _form.Validate();
-        if (!_formValid) return;
+        if (_form?.IsValid != true) return;
 
         using var scope = ServiceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();

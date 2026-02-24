@@ -49,6 +49,19 @@
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-primary">
+            <div class="d-flex justify-space-between align-center">
+                <div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Equipment Items</MudText>
+                    <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-family: 'Rajdhani', sans-serif; font-weight: 700;">@_totalEquipment</MudText>
+                </div>
+                <div class="stat-icon stat-icon-primary">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
         <MudPaper Elevation="2" Class="pa-4 stat-card stat-card-warning">
             <div class="d-flex justify-space-between align-center">
                 <div>
@@ -110,6 +123,13 @@
                     </MudButton>
                 </MudItem>
                 <MudItem xs="12" sm="6">
+                    <MudButton Href="/admin/equipment/new" Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add" FullWidth="true"
+                               Style="text-transform: none; justify-content: flex-start; padding: 12px 16px;">
+                        Add New Equipment
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" sm="6">
                     <MudButton Href="/admin/inquiries" Variant="Variant.Outlined" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.Email" FullWidth="true"
                                Style="text-transform: none; justify-content: flex-start; padding: 12px 16px;">
@@ -149,6 +169,7 @@
 @code {
     private int _totalServices;
     private int _totalProjects;
+    private int _totalEquipment;
     private int _pendingApprovals;
     private int _newInquiries;
     private int _galleryImages;
@@ -160,6 +181,7 @@
 
         _totalServices = await context.Services.CountAsync();
         _totalProjects = await context.Projects.CountAsync();
+        _totalEquipment = await context.Equipment.CountAsync();
         _pendingApprovals = await context.Services.CountAsync(s => s.ApprovalStatus == ApprovalStatus.PendingApproval)
             + await context.Projects.CountAsync(p => p.ApprovalStatus == ApprovalStatus.PendingApproval);
         _newInquiries = await context.ServiceInquiries.CountAsync(i => i.Status == InquiryStatus.New);

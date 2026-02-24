@@ -1,0 +1,364 @@
+@page "/admin/inquiries/{Id:int}"
+@layout AdminLayout
+@attribute [Authorize(Policy = "RequireContentCreator")]
+@using OECLWebsite.Data
+@using OECLWebsite.Data.Entities
+@using OECLWebsite.Infrastructure.Services
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@inject IServiceProvider ServiceProvider
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Inquiry Details — Admin</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (_inquiry is null)
+{
+    <MudAlert Severity="Severity.Warning">Inquiry not found.</MudAlert>
+}
+else
+{
+    <!-- Header -->
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Inquiry Details</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                From @_inquiry.ContactName — @_inquiry.InquiryDate.ToString("D")
+            </MudText>
+        </div>
+        <MudButton Href="/admin/inquiries" Variant="Variant.Outlined" Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small"
+                   Style="text-transform: none;">
+            Back to Inquiries
+        </MudButton>
+    </div>
+
+    <MudGrid Spacing="5">
+        <!-- Left Column: Inquiry Info + Message -->
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+                <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4"
+                         Style="font-family: 'Rajdhani', sans-serif;">Contact Information</MudText>
+
+                <div class="d-flex align-center gap-2 mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Color="Color.Secondary" />
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Name</MudText>
+                        <MudText Typo="Typo.body2">@_inquiry.ContactName</MudText>
+                    </div>
+                </div>
+                <div class="d-flex align-center gap-2 mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Color="Color.Secondary" />
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Email</MudText>
+                        <MudText Typo="Typo.body2">@_inquiry.Email</MudText>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(_inquiry.Phone))
+                {
+                    <div class="d-flex align-center gap-2 mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Color="Color.Secondary" />
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Phone</MudText>
+                            <MudText Typo="Typo.body2">@_inquiry.Phone</MudText>
+                        </div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_inquiry.CompanyName))
+                {
+                    <div class="d-flex align-center gap-2 mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Small" Color="Color.Secondary" />
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Company</MudText>
+                            <MudText Typo="Typo.body2">@_inquiry.CompanyName</MudText>
+                        </div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_inquiry.ServiceInterest))
+                {
+                    <div class="d-flex align-center gap-2 mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.Engineering" Size="Size.Small" Color="Color.Secondary" />
+                        <div>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Subject</MudText>
+                            <MudText Typo="Typo.body2">@_inquiry.ServiceInterest</MudText>
+                        </div>
+                    </div>
+                }
+
+                <MudDivider Class="my-4" />
+
+                <!-- Status & Assignment -->
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="InquiryStatus" @bind-Value="_currentStatus" Label="Status"
+                                   Variant="Variant.Outlined" Dense="true">
+                            @foreach (var s in Enum.GetValues<InquiryStatus>())
+                            {
+                                <MudSelectItem T="InquiryStatus" Value="@s">@s</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_assignedTo" Label="Assigned To"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="SaveStatus" Style="text-transform: none;"
+                                   StartIcon="@Icons.Material.Filled.Save">
+                            Save Changes
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-4" />
+
+                <!-- Original Message -->
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Original Message</MudText>
+                <MudPaper Elevation="0" Class="pa-4" Style="background: #F1F5F9; border-radius: 8px; white-space: pre-wrap;">
+                    <MudText Typo="Typo.body2">@(_inquiry.Message ?? "No message provided.")</MudText>
+                </MudPaper>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Right Column: Conversation Thread + Reply -->
+        <MudItem xs="12" md="7">
+            <!-- Conversation Thread -->
+            <MudPaper Elevation="2" Class="pa-5 mb-5" Style="border-radius: 12px;">
+                <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4"
+                         Style="font-family: 'Rajdhani', sans-serif;">
+                    Conversation
+                    @if (_replies.Count > 0)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Class="ml-2">@_replies.Count</MudChip>
+                    }
+                </MudText>
+
+                @if (_replies.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
+                        No replies yet. Use the form below to respond to this inquiry.
+                    </MudAlert>
+                }
+                else
+                {
+                    @foreach (var reply in _replies)
+                    {
+                        <MudPaper Elevation="0" Class="pa-4 mb-3"
+                                  Style="@($"border-radius: 8px; border-left: 4px solid {(reply.IsInternalNote ? "#F97316" : "#0A2463")}; background: {(reply.IsInternalNote ? "#FFF7ED" : "#F8FAFC")};")">
+                            <div class="d-flex justify-space-between align-center mb-2">
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Color="Color.Secondary" />
+                                    <MudText Typo="Typo.subtitle2">@reply.SentByName</MudText>
+                                    @if (reply.IsInternalNote)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                                                 Style="font-size: 0.7rem;">Internal Note</MudChip>
+                                    }
+                                </div>
+                                <div class="d-flex align-center gap-1">
+                                    @if (!reply.IsInternalNote && !reply.EmailSentSuccessfully)
+                                    {
+                                        <MudTooltip Text="Email delivery failed">
+                                            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small"
+                                                     Color="Color.Error" />
+                                        </MudTooltip>
+                                    }
+                                    else if (!reply.IsInternalNote && reply.EmailSentSuccessfully)
+                                    {
+                                        <MudTooltip Text="Email sent">
+                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Size="Size.Small"
+                                                     Color="Color.Success" />
+                                        </MudTooltip>
+                                    }
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @reply.SentAt.ToString("g")
+                                    </MudText>
+                                </div>
+                            </div>
+                            <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">@reply.Body</MudText>
+                        </MudPaper>
+                    }
+                }
+            </MudPaper>
+
+            <!-- Reply Compose -->
+            <MudPaper Elevation="2" Class="pa-5" Style="border-radius: 12px;">
+                <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4"
+                         Style="font-family: 'Rajdhani', sans-serif;">Reply</MudText>
+
+                <MudTextField @bind-Value="_replySubject" Label="Subject" Variant="Variant.Outlined"
+                              Class="mb-3" />
+                <MudTextField @bind-Value="_replyBody" Label="Message" Variant="Variant.Outlined"
+                              Lines="6" Class="mb-3" />
+                <div class="d-flex justify-space-between align-center">
+                    <MudCheckBox @bind-Value="_isInternalNote" T="bool"
+                                 Label="Internal note (not emailed to client)"
+                                 Color="Color.Warning" Dense="true" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium"
+                               Disabled="@(string.IsNullOrWhiteSpace(_replyBody) || _sending)"
+                               OnClick="SendReply"
+                               StartIcon="@Icons.Material.Filled.Send"
+                               Style="text-transform: none;">
+                        @if (_sending)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <text>Sending...</text>
+                        }
+                        else
+                        {
+                            <text>@(_isInternalNote ? "Save Note" : "Send Reply")</text>
+                        }
+                    </MudButton>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ServiceInquiry? _inquiry;
+    private List<InquiryReply> _replies = [];
+    private bool _loading = true;
+    private bool _sending;
+
+    // Reply compose
+    private string _replySubject = "";
+    private string _replyBody = "";
+    private bool _isInternalNote;
+
+    // Status management
+    private InquiryStatus _currentStatus;
+    private string? _assignedTo;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            _inquiry = await context.ServiceInquiries
+                .Include(i => i.Service)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Id == Id);
+
+            if (_inquiry is null) return;
+
+            _currentStatus = _inquiry.Status;
+            _assignedTo = _inquiry.AssignedTo;
+            if (string.IsNullOrEmpty(_replySubject))
+                _replySubject = $"RE: Inquiry from {_inquiry.ContactName}";
+
+            _replies = await context.InquiryReplies
+                .Where(r => r.ServiceInquiryId == Id)
+                .OrderBy(r => r.SentAt)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SendReply()
+    {
+        if (string.IsNullOrWhiteSpace(_replyBody)) return;
+        _sending = true;
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            var fullName = user.FindFirst("FullName")?.Value ?? user.Identity?.Name ?? "Admin";
+
+            using var scope = ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var reply = new InquiryReply
+            {
+                ServiceInquiryId = Id,
+                Subject = _replySubject,
+                Body = _replyBody,
+                SentByUserId = userId,
+                SentByName = fullName,
+                SentAt = DateTime.UtcNow,
+                IsInternalNote = _isInternalNote,
+                EmailSentSuccessfully = false
+            };
+
+            // Send email if not internal note
+            if (!_isInternalNote && _inquiry is not null)
+            {
+                try
+                {
+                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                    await emailService.SendInquiryReplyAsync(
+                        _inquiry.Email, _inquiry.ContactName,
+                        _replySubject, _replyBody);
+                    reply.EmailSentSuccessfully = true;
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Email delivery failed: {ex.Message}. Reply saved.", Severity.Warning);
+                }
+            }
+            else if (_isInternalNote)
+            {
+                reply.EmailSentSuccessfully = true;
+            }
+
+            context.InquiryReplies.Add(reply);
+
+            // Auto-update inquiry status
+            if (!_isInternalNote)
+            {
+                var inquiry = await context.ServiceInquiries.FindAsync(Id);
+                if (inquiry is not null)
+                {
+                    inquiry.Status = InquiryStatus.Responded;
+                    inquiry.ResponseDate = DateTime.UtcNow;
+                    _currentStatus = inquiry.Status;
+                }
+            }
+
+            await context.SaveChangesAsync();
+
+            Snackbar.Add(_isInternalNote ? "Internal note saved" : "Reply sent successfully", Severity.Success);
+
+            // Reset form and reload
+            _replyBody = "";
+            _isInternalNote = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally { _sending = false; }
+    }
+
+    private async Task SaveStatus()
+    {
+        using var scope = ServiceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var entity = await context.ServiceInquiries.FindAsync(Id);
+        if (entity is not null)
+        {
+            entity.Status = _currentStatus;
+            entity.AssignedTo = _assignedTo;
+            if (_currentStatus == InquiryStatus.Responded)
+                entity.ResponseDate = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+            Snackbar.Add("Status updated", Severity.Success);
+        }
+    }
+}

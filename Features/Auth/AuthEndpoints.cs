@@ -46,13 +46,13 @@ public static class AuthEndpoints
             }
 
             return Results.Redirect("/auth/login?error=Invalid+credentials");
-        });
+        }).DisableAntiforgery();
 
         auth.MapPost("/logout", async (SignInManager<ApplicationUser> signInManager) =>
         {
             await signInManager.SignOutAsync();
             return Results.Redirect("/");
-        });
+        }).DisableAntiforgery();
 
         auth.MapGet("/logout", async (SignInManager<ApplicationUser> signInManager) =>
         {

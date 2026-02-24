@@ -28,6 +28,7 @@
                     <MudNavLink Href="/" Style="color: #94A3B8;">Home</MudNavLink>
                     <MudNavLink Href="/about" Style="color: #94A3B8;">About Us</MudNavLink>
                     <MudNavLink Href="/services" Style="color: #94A3B8;">Services</MudNavLink>
+                    <MudNavLink Href="/equipment" Style="color: #94A3B8;">Equipment</MudNavLink>
                     <MudNavLink Href="/projects" Style="color: #94A3B8;">Projects</MudNavLink>
                 </MudNavMenu>
             </MudItem>
@@ -66,10 +67,11 @@
             <MudText Typo="Typo.caption" Style="color: #475569;">
                 &copy; @DateTime.Now.Year Oval Engineering Company Limited. All rights reserved.
             </MudText>
-            <MudText Typo="Typo.caption" Style="color: #475569;">
-                <MudLink Href="/auth/login" Typo="Typo.caption" Underline="Underline.Hover"
-                         Style="color: #475569; font-size: inherit; font-family: inherit;">Staff Login</MudLink>
-            </MudText>
+            <MudButton Href="/auth/login" Variant="Variant.Text" Color="Color.Inherit"
+                       StartIcon="@Icons.Material.Filled.Lock" Size="Size.Small"
+                       Style="text-transform: none; color: #475569;">
+                Staff Login
+            </MudButton>
         </div>
     </MudContainer>
 </footer>

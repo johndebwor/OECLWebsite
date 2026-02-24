@@ -1,5 +1,5 @@
-@page "/admin/services/new"
-@page "/admin/services/edit/{Id:int}"
+@page "/admin/equipment/new"
+@page "/admin/equipment/edit/{Id:int}"
 @layout AdminLayout
 @attribute [Authorize(Policy = "RequireContentCreator")]
 @using OECLWebsite.Data
@@ -9,17 +9,17 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 
-<PageTitle>@(IsEdit ? "Edit Service" : "New Service") — Admin</PageTitle>
+<PageTitle>@(IsEdit ? "Edit Equipment" : "New Equipment") — Admin</PageTitle>
 
 <div class="d-flex justify-space-between align-center mb-6">
     <div>
-        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">@(IsEdit ? "Edit Service" : "Create New Service")</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">@(IsEdit ? "Update service details and settings" : "Add a new engineering service offering")</MudText>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">@(IsEdit ? "Edit Equipment" : "Add New Equipment")</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@(IsEdit ? "Update equipment details and settings" : "Add a new equipment item to the catalog")</MudText>
     </div>
-    <MudButton Href="/admin/services" Variant="Variant.Outlined" Color="Color.Default"
+    <MudButton Href="/admin/equipment" Variant="Variant.Outlined" Color="Color.Default"
                StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small"
                Style="text-transform: none;">
-        Back to Services
+        Back to Equipment
     </MudButton>
 </div>
 
@@ -27,8 +27,8 @@
     <MudForm @ref="_form" @bind-IsValid="_formValid">
         <MudGrid>
             <MudItem xs="12" sm="8">
-                <MudTextField @bind-Value="_model.Title" Label="Service Title" Required="true"
-                              RequiredError="Title is required" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="_model.Title" Label="Equipment Name" Required="true"
+                              RequiredError="Name is required" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" sm="4">
                 <MudSelect T="int" @bind-Value="_model.CategoryId" Label="Category" Required="true"
@@ -54,16 +54,26 @@
                               Style="font-family: 'JetBrains Mono', monospace;" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <ImageUpload Label="Service Icon"
-                             ButtonText="Upload Icon"
-                             @bind-CurrentImageUrl="_model.IconUrl"
-                             Subfolder="services/icons" />
+                <MudTextField @bind-Value="_model.CatalogReference" Label="Catalog Reference"
+                              Variant="Variant.Outlined"
+                              HelperText="Vision Energy catalog page reference (e.g. Page 12)" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <ImageUpload Label="Service Image"
+                <MudTextField @bind-Value="_model.AvailabilityNote" Label="Availability Note"
+                              Variant="Variant.Outlined"
+                              HelperText="e.g. Available for rental, Sale only" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <ImageUpload Label="Equipment Icon"
+                             ButtonText="Upload Icon"
+                             @bind-CurrentImageUrl="_model.IconUrl"
+                             Subfolder="equipment/icons" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <ImageUpload Label="Equipment Image"
                              ButtonText="Upload Image"
                              @bind-CurrentImageUrl="_model.ImageUrl"
-                             Subfolder="services" />
+                             Subfolder="equipment" />
             </MudItem>
             <MudItem xs="12" sm="4">
                 <MudNumericField @bind-Value="_model.DisplayOrder" Label="Display Order"
@@ -84,12 +94,12 @@
         </MudGrid>
 
         <div class="d-flex justify-end gap-3 mt-6">
-            <MudButton Variant="Variant.Outlined" Href="/admin/services">Cancel</MudButton>
+            <MudButton Variant="Variant.Outlined" Href="/admin/equipment">Cancel</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        Disabled="@(!_formValid || _saving)"
                        OnClick="HandleSave"
                        StartIcon="@Icons.Material.Filled.Save">
-                @(_saving ? "Saving..." : "Save Service")
+                @(_saving ? "Saving..." : "Save Equipment")
             </MudButton>
         </div>
     </MudForm>
@@ -102,15 +112,15 @@
     private MudForm _form = null!;
     private bool _formValid;
     private bool _saving;
-    private ServiceModel _model = new();
-    private List<ServiceCategory> _categories = [];
+    private EquipmentModel _model = new();
+    private List<EquipmentCategory> _categories = [];
 
     protected override async Task OnInitializedAsync()
     {
         using var scope = ServiceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        _categories = await context.ServiceCategories
+        _categories = await context.EquipmentCategories
             .Where(c => c.IsActive)
             .OrderBy(c => c.DisplayOrder)
             .AsNoTracking()
@@ -118,22 +128,24 @@
 
         if (IsEdit)
         {
-            var service = await context.Services.AsNoTracking().FirstOrDefaultAsync(s => s.Id == Id);
-            if (service is not null)
+            var item = await context.Equipment.AsNoTracking().FirstOrDefaultAsync(e => e.Id == Id);
+            if (item is not null)
             {
-                _model = new ServiceModel
+                _model = new EquipmentModel
                 {
-                    Title = service.Title,
-                    CategoryId = service.CategoryId,
-                    ShortDescription = service.ShortDescription,
-                    DetailedDescription = service.DetailedDescription,
-                    TechnicalSpecs = service.TechnicalSpecs,
-                    IconUrl = service.IconUrl,
-                    ImageUrl = service.ImageUrl,
-                    DisplayOrder = service.DisplayOrder,
-                    IsActive = service.IsActive,
-                    IsFeatured = service.IsFeatured,
-                    ApprovalStatus = service.ApprovalStatus,
+                    Title = item.Title,
+                    CategoryId = item.CategoryId,
+                    ShortDescription = item.ShortDescription,
+                    DetailedDescription = item.DetailedDescription,
+                    TechnicalSpecs = item.TechnicalSpecs,
+                    CatalogReference = item.CatalogReference,
+                    AvailabilityNote = item.AvailabilityNote,
+                    IconUrl = item.IconUrl,
+                    ImageUrl = item.ImageUrl,
+                    DisplayOrder = item.DisplayOrder,
+                    IsActive = item.IsActive,
+                    IsFeatured = item.IsFeatured,
+                    ApprovalStatus = item.ApprovalStatus,
                 };
             }
         }
@@ -150,15 +162,15 @@
             using var scope = ServiceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            Service entity;
+            Equipment entity;
             if (IsEdit)
             {
-                entity = await context.Services.FindAsync(Id) ?? throw new InvalidOperationException("Service not found");
+                entity = await context.Equipment.FindAsync(Id) ?? throw new InvalidOperationException("Equipment not found");
             }
             else
             {
-                entity = new Service();
-                context.Services.Add(entity);
+                entity = new Equipment();
+                context.Equipment.Add(entity);
             }
 
             entity.Title = _model.Title;
@@ -166,6 +178,8 @@
             entity.ShortDescription = _model.ShortDescription;
             entity.DetailedDescription = _model.DetailedDescription;
             entity.TechnicalSpecs = _model.TechnicalSpecs;
+            entity.CatalogReference = _model.CatalogReference;
+            entity.AvailabilityNote = _model.AvailabilityNote;
             entity.IconUrl = _model.IconUrl;
             entity.ImageUrl = _model.ImageUrl;
             entity.DisplayOrder = _model.DisplayOrder;
@@ -174,8 +188,8 @@
             entity.ApprovalStatus = _model.ApprovalStatus;
 
             await context.SaveChangesAsync();
-            Snackbar.Add(IsEdit ? "Service updated" : "Service created", Severity.Success);
-            Navigation.NavigateTo("/admin/services");
+            Snackbar.Add(IsEdit ? "Equipment updated" : "Equipment created", Severity.Success);
+            Navigation.NavigateTo("/admin/equipment");
         }
         catch (Exception ex)
         {
@@ -184,13 +198,15 @@
         finally { _saving = false; }
     }
 
-    private class ServiceModel
+    private class EquipmentModel
     {
         public string Title { get; set; } = string.Empty;
         public int CategoryId { get; set; }
         public string? ShortDescription { get; set; }
         public string? DetailedDescription { get; set; }
         public string? TechnicalSpecs { get; set; }
+        public string? CatalogReference { get; set; }
+        public string? AvailabilityNote { get; set; }
         public string? IconUrl { get; set; }
         public string? ImageUrl { get; set; }
         public int DisplayOrder { get; set; }

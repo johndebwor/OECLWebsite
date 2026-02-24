@@ -1,4 +1,4 @@
-@page "/admin/categories"
+@page "/admin/equipment-categories"
 @layout AdminLayout
 @attribute [Authorize(Policy = "RequireContentCreator")]
 @using OECLWebsite.Data
@@ -7,12 +7,12 @@
 @inject IServiceProvider ServiceProvider
 @inject ISnackbar Snackbar
 
-<PageTitle>Service Categories — Admin</PageTitle>
+<PageTitle>Equipment Categories — Admin</PageTitle>
 
 <div class="d-flex justify-space-between align-center mb-6">
     <div>
-        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Service Categories</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage categories used when creating services</MudText>
+        <MudText Typo="Typo.h4" Style="font-family: 'Rajdhani', sans-serif;">Equipment Categories</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Manage categories used when adding equipment items</MudText>
     </div>
     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.Add"
@@ -36,7 +36,7 @@ else
                 <MudTh>Order</MudTh>
                 <MudTh>Name</MudTh>
                 <MudTh>Description</MudTh>
-                <MudTh>Services</MudTh>
+                <MudTh>Equipment</MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh Style="width: 120px;">Actions</MudTh>
             </HeaderContent>
@@ -51,7 +51,7 @@ else
                         @(context.Description ?? "—")
                     </MudText>
                 </MudTd>
-                <MudTd DataLabel="Services">@context.Services.Count</MudTd>
+                <MudTd DataLabel="Equipment">@context.Equipment.Count</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Size="Size.Small"
                              Color="@(context.IsActive ? Color.Success : Color.Default)"
@@ -65,7 +65,7 @@ else
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
                                    Color="Color.Error"
                                    OnClick="@(() => DeleteCategory(context))"
-                                   Disabled="@(context.Services.Count > 0)" />
+                                   Disabled="@(context.Equipment.Count > 0)" />
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>
@@ -103,7 +103,7 @@ else
 </MudDialog>
 
 @code {
-    private List<ServiceCategory> _categories = [];
+    private List<EquipmentCategory> _categories = [];
     private bool _loading = true;
     private bool _dialogVisible;
     private bool _saving;
@@ -124,8 +124,8 @@ else
         _loading = true;
         using var scope = ServiceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        _categories = await context.ServiceCategories
-            .Include(c => c.Services)
+        _categories = await context.EquipmentCategories
+            .Include(c => c.Equipment)
             .OrderBy(c => c.DisplayOrder)
             .ToListAsync();
         _loading = false;
@@ -141,7 +141,7 @@ else
         _dialogVisible = true;
     }
 
-    private void OpenEditDialog(ServiceCategory cat)
+    private void OpenEditDialog(EquipmentCategory cat)
     {
         _editingId = cat.Id;
         _name = cat.Name;
@@ -166,7 +166,7 @@ else
 
             if (_editingId > 0)
             {
-                var cat = await context.ServiceCategories.FindAsync(_editingId);
+                var cat = await context.EquipmentCategories.FindAsync(_editingId);
                 if (cat is null) return;
                 cat.Name = _name;
                 cat.Description = _description;
@@ -177,7 +177,7 @@ else
             }
             else
             {
-                context.ServiceCategories.Add(new ServiceCategory
+                context.EquipmentCategories.Add(new EquipmentCategory
                 {
                     Name = _name,
                     Description = _description,
@@ -194,19 +194,19 @@ else
         finally { _saving = false; }
     }
 
-    private async Task DeleteCategory(ServiceCategory cat)
+    private async Task DeleteCategory(EquipmentCategory cat)
     {
-        if (cat.Services.Count > 0)
+        if (cat.Equipment.Count > 0)
         {
-            Snackbar.Add("Cannot delete a category that has services assigned to it.", Severity.Warning);
+            Snackbar.Add("Cannot delete a category that has equipment assigned to it.", Severity.Warning);
             return;
         }
 
         using var scope = ServiceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var entity = await context.ServiceCategories.FindAsync(cat.Id);
+        var entity = await context.EquipmentCategories.FindAsync(cat.Id);
         if (entity is null) return;
-        context.ServiceCategories.Remove(entity);
+        context.EquipmentCategories.Remove(entity);
         await context.SaveChangesAsync();
         Snackbar.Add("Category deleted.", Severity.Success);
         await LoadCategories();

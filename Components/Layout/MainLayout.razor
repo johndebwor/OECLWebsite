@@ -5,6 +5,7 @@
 @using Microsoft.EntityFrameworkCore
 @inject IServiceProvider ServiceProvider
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 <MudThemeProvider Theme="OvalTheme.Theme" />
 <MudPopoverProvider />
@@ -57,6 +58,7 @@
             <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             <MudNavLink Href="/about" Icon="@Icons.Material.Filled.Info">About Us</MudNavLink>
             <MudNavLink Href="/services" Icon="@Icons.Material.Filled.Engineering">Services</MudNavLink>
+            <MudNavLink Href="/equipment" Icon="@Icons.Material.Filled.Inventory2">Equipment</MudNavLink>
             <MudNavLink Href="/projects" Icon="@Icons.Material.Filled.Business">Projects</MudNavLink>
             <MudNavLink Href="/gallery" Icon="@Icons.Material.Filled.PhotoLibrary">Gallery</MudNavLink>
             <MudNavLink Href="/contact" Icon="@Icons.Material.Filled.ContactMail">Contact</MudNavLink>
@@ -88,6 +90,13 @@
     </MudMainContent>
 </MudLayout>
 
+@if (_showScrollTop)
+{
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
+            Size="Size.Medium" OnClick="ScrollToTop"
+            Style="position: fixed; bottom: 24px; right: 24px; z-index: 999;" />
+}
+
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
@@ -99,6 +108,8 @@
     private string? _logoUrl;
     private List<Announcement> _announcements = [];
     private HashSet<int> _dismissed = [];
+    private bool _showScrollTop;
+    private DotNetObjectReference<MainLayout>? _selfRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -124,8 +135,35 @@
         await TrackPageViewAsync(NavigationManager.Uri);
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerScrollHandler", _selfRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnScroll(double scrollY)
+    {
+        var show = scrollY > 300;
+        if (show != _showScrollTop)
+        {
+            _showScrollTop = show;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ScrollToTop()
+    {
+        await JS.InvokeVoidAsync("window.scrollTo", 0, 0);
+    }
+
     private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
+        _drawerOpen = false;
+        await InvokeAsync(StateHasChanged);
         await TrackPageViewAsync(e.Location);
     }
 
@@ -166,5 +204,6 @@
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        _selfRef?.Dispose();
     }
 }

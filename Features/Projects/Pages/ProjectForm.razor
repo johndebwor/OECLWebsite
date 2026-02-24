@@ -32,7 +32,7 @@
                               RequiredError="Project name is required" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudSelect @bind-Value="_model.ProjectType" Label="Project Type" Variant="Variant.Outlined">
+                <MudSelect T="string" @bind-Value="_model.ProjectType" Label="Project Type" Variant="Variant.Outlined">
                     @foreach (var pt in _projectTypes)
                     {
                         <MudSelectItem T="string" Value="@pt">@pt</MudSelectItem>
@@ -65,7 +65,7 @@
                               Style="font-family: 'JetBrains Mono', monospace;" />
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudSelect @bind-Value="_model.Status" Label="Project Status" Variant="Variant.Outlined">
+                <MudSelect T="ProjectStatus" @bind-Value="_model.Status" Label="Project Status" Variant="Variant.Outlined">
                     <MudSelectItem T="ProjectStatus" Value="ProjectStatus.Planned">Planned</MudSelectItem>
                     <MudSelectItem T="ProjectStatus" Value="ProjectStatus.Ongoing">Ongoing</MudSelectItem>
                     <MudSelectItem T="ProjectStatus" Value="ProjectStatus.Completed">Completed</MudSelectItem>
@@ -85,7 +85,7 @@
                 <MudCheckBox @bind-Value="_model.IsShowcase" Label="Showcase on Homepage" Color="Color.Primary" />
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudSelect @bind-Value="_model.ApprovalStatus" Label="Approval Status" Variant="Variant.Outlined">
+                <MudSelect T="ApprovalStatus" @bind-Value="_model.ApprovalStatus" Label="Approval Status" Variant="Variant.Outlined">
                     <MudSelectItem T="ApprovalStatus" Value="ApprovalStatus.Draft">Draft</MudSelectItem>
                     <MudSelectItem T="ApprovalStatus" Value="ApprovalStatus.PendingApproval">Submit for Approval</MudSelectItem>
                 </MudSelect>
@@ -234,7 +234,7 @@
     private async Task HandleSave()
     {
         await _form.Validate();
-        if (!_formValid) return;
+        if (!_form.IsValid) return;
 
         _saving = true;
         try

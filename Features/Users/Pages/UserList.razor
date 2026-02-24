@@ -185,7 +185,7 @@
     private async Task SaveUser()
     {
         if (_form is not null) await _form.Validate();
-        if (!_formValid) return;
+        if (_form?.IsValid != true) return;
 
         if (_editingUserId is not null)
         {
