@@ -50,6 +50,7 @@ temp_build/
 
 ## Publish output
 publish/
+Deploy/
 
 ## Database backups
 backups/
